@@ -1,6 +1,6 @@
 import {createHash} from 'node:crypto';
 
-export const POLICY_VERSION='usuarios-sin-servidores-v1';
+export const POLICY_VERSION='usuarios-sin-servidores-v2';
 const folded=value=>String(value??'').normalize('NFKC').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
 function contentText(value){
  let text=String(value??'');
@@ -31,7 +31,12 @@ export function assessUserAlert(action,alert,evidence,rule,settings,now=Date.now
   ||!Array.isArray(rule.prioridades)||!rule.prioridades.includes(alert.soc_prioridad)
   ||!Array.isArray(rule.peligrosidades)||!rule.peligrosidades.includes(alert.soc_peligrosidad)
   ||(rule.clases_incibe&&!rule.clases_incibe.includes(alert.incibe_clase_id)))return fail('REGLA_NO_VIGENTE');
- if(alert.es_sospechosa!==false||alert.remitente_confianza!==true||!Array.isArray(alert.inconsistencias)||alert.inconsistencias.length)return fail('ALERTA_NO_FIABLE');
+ // Only the documented priority-label mismatch may be ignored, and only when
+ // the rule also requires criticality in the original body. Other SQL patterns
+ // (especially '%') never weaken the executor's checks.
+ const ignorePriority=rule.exigir_criticidad_cuerpo===true&&Array.isArray(rule.inconsistencias_ignoradas)&&rule.inconsistencias_ignoradas.includes('Prioridad % incoherente con gravedad %');
+ if(alert.es_sospechosa!==false||alert.remitente_confianza!==true||!Array.isArray(alert.inconsistencias)||alert.inconsistencias.some(i=>!(ignorePriority&&/^Prioridad P[1-4] incoherente con gravedad (?:CRITICO|CRÍTICO)$/i.test(String(i).trim()))))return fail('ALERTA_NO_FIABLE');
+ if(rule.exigir_criticidad_cuerpo===true&&!/^critic(?:o|a)$/.test(folded(alert.criticidad_cuerpo).trim()))return fail('CRITICIDAD_CUERPO_NO_CONFIRMADA');
  if(!['NUEVA','EN_REVISION','CONFIRMADA'].includes(alert.estado)||alert.soc_peligrosidad!=='CRITICO')return fail('ALERTA_NO_CRITICA_ACTIVA');
  if(!['INTRUSION','CONTENIDO_DANINO','COMPROMISO_INFORMACION'].includes(alert.incibe_clase_id))return fail('CLASE_NO_CONTENIBLE');
  const asset=folded(alert.equipo_afectado).trim();
@@ -49,6 +54,7 @@ export function assessUserAlert(action,alert,evidence,rule,settings,now=Date.now
  const raw=[alert.asunto_correo,alert.titulo,evidence.cuerpo_correo_raw].join(' ');
  if(/[\u200b-\u200f\u202a-\u202e\u2060-\u206f\ufeff]/.test(raw))return fail('TEXTO_OFUSCADO');
  const text=contentText(raw);
+ if(rule.exigir_criticidad_cuerpo===true&&!/criticidad\s*[:|]?\s*critic[oa]\b/.test(contentText(evidence.cuerpo_correo_raw)))return fail('CRITICIDAD_ORIGINAL_NO_CONFIRMADA');
  // No commands in either subject or body, including embedded/quoted instructions.
  if(alert.id_solicitud||/\bsol-\d|solicitud|peticion|\bbloque[ao]|\bbloquear\b|\bdesbloque|\bliberar\b|\bdeshabilit|\bdisable\b|\bblock\b/.test(text))return fail('PETICION_NO_ES_EVIDENCIA');
  if(/ignora|ignore|instruccion|prompt|actua como|system message|assistant|chatgpt|ejecuta|execute|powershell|curl\b/.test(text))return fail('POSIBLE_MANIPULACION');
@@ -59,7 +65,9 @@ export function assessUserAlert(action,alert,evidence,rule,settings,now=Date.now
  const labels=[...text.matchAll(/(?:cuenta relacionada|usuario implicado)\s*[:|]?\s*([a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,})/g)].map(x=>x[1]);
  if(new Set(labels).size!==1||labels[0]!==user)return fail('USUARIO_AMBIGUO');
  if(!alert.id_alerta_soc||!text.includes(folded(alert.id_alerta_soc)))return fail('FALTA_REFERENCIA_ALERTA');
- const maxAge=settings.maxAgeMinutes*60000;
+ const ruleAge=rule.antiguedad_max_minutos;
+ if(ruleAge!=null&&(!Number.isInteger(ruleAge)||ruleAge<1))return fail('REGLA_ANTIGUEDAD_INVALIDA');
+ const maxAge=Math.min(settings.maxAgeMinutes,ruleAge??settings.maxAgeMinutes)*60000;
  for(const date of [alert.fecha_hora_correo,alert.fecha_ultimo_evento||alert.fecha_hora_evento,action.fecha_solicitud]){
   const delta=age(date,now);if(delta < -60000||delta>maxAge)return fail('ALERTA_ANTIGUA_O_FECHA_INVALIDA');
  }

@@ -19,6 +19,11 @@ function fixture(){
  };
 }
 const assess=f=>assessUserAlert(f.action,f.alert,f.evidence,f.rule,f.settings,now);
+function doubleCritical(){const f=fixture();f.alert.soc_prioridad='P4';f.alert.criticidad_cuerpo='Crítica';f.alert.inconsistencias=['Prioridad P4 incoherente con gravedad CRITICO'];f.evidence.cuerpo_correo_raw+=' Criticidad: Crítica.';f.rule.prioridades=['P4'];f.rule.exigir_criticidad_cuerpo=true;f.rule.inconsistencias_ignoradas=['Prioridad % incoherente con gravedad %'];return f;}
+test('AUTO-04 admite P4 con doble criticidad e ignora solo la discrepancia declarada',()=>assert.equal(assess(doubleCritical()).eligible,true));
+test('AUTO-04 rechaza criticidad media o ausente en el original',()=>{for(const mutate of [f=>{f.alert.criticidad_cuerpo='Media';},f=>{f.evidence.cuerpo_correo_raw=f.evidence.cuerpo_correo_raw.replace('Criticidad: Crítica.','');}]){const f=doubleCritical();mutate(f);assert.equal(assess(f).eligible,false);}});
+test('ninguna regla puede ignorar IP malformada u otras inconsistencias con un comodín',()=>{const f=doubleCritical();f.rule.inconsistencias_ignoradas.push('%');f.alert.inconsistencias.push('IP malformada');assert.equal(assess(f).eligible,false);});
+test('la antigüedad específica de la regla solo puede estrechar el límite',()=>{const f=fixture();f.rule.antiguedad_max_minutos=1;assert.equal(assess(f).eligible,false);f.rule.antiguedad_max_minutos=60;f.alert.fecha_hora_evento='2026-11-03T18:40:00Z';assert.equal(assess(f).eligible,false);});
 test('solo una alerta verificada y reciente de un usuario en un puesto es elegible',()=>assert.equal(assess(fixture()).eligible,true));
 const negativeCases=[
  ['IP pública también puede ser un servidor',f=>{f.action.ip='8.8.8.8';f.action.usuario_objetivo=null;}],

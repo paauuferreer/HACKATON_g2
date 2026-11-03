@@ -24,6 +24,11 @@ else{
     CREATE VIEW v_alertas AS SELECT * FROM test_alertas;
     CREATE TABLE test_evidencias (correo_id uuid,remitente_correo text,cuerpo_correo_raw text,eml_raw text,cabeceras jsonb,autenticacion_verificada boolean,autenticacion_metodo text,autenticacion_emisor text);
     CREATE VIEW v_evidencias_automatizacion AS SELECT * FROM test_evidencias;
+    ALTER TABLE reglas_bloqueo_auto ADD exigir_criticidad_cuerpo boolean DEFAULT false, ADD inconsistencias_ignoradas text[] DEFAULT '{}', ADD antiguedad_max_minutos int DEFAULT 15;
+    ALTER TABLE test_alertas ADD criticidad_cuerpo text;
+    ALTER TABLE test_evidencias ADD integridad_ok boolean DEFAULT true;
+    CREATE OR REPLACE VIEW v_evidencias_automatizacion AS SELECT * FROM test_evidencias;
+    CREATE OR REPLACE VIEW v_alertas AS SELECT * FROM test_alertas;
    `);
    const settings=runtimeSettings({BLOQUEO_AUTO_ACTIVO:'1',AUTOMATION_START_AT:new Date(Date.now()-900000).toISOString()});
    const store=postgresStore(client,settings),other=postgresStore(second,settings);
@@ -33,9 +38,9 @@ else{
     const subject='[SOC] Compromiso confirmado AL-20261103-0001';
     const body='Compromiso confirmado en pc-madrid-001. Cuenta relacionada: ana.perez@sampol.com. Referencia AL-20261103-0001.';
     const eml=`From: soc-hackaton@sampol.com\r\nSubject: ${subject}\r\nContent-Type: text/plain; charset=utf-8\r\n\r\n${body}`;
-    await client.query("INSERT INTO reglas_bloqueo_auto VALUES ('AUTO-01',true,'USUARIO','{P1}','{CRITICO}','{INTRUSION}',1,30)");
-    await client.query("INSERT INTO test_alertas VALUES ($1,$2,'ana.perez@sampol.com','pc-madrid-001','P1','CRITICO','INTRUSION','NUEVA',false,true,'{}','soc-hackaton@sampol.com',$3,'Compromiso confirmado','AL-20261103-0001',null,$4,$4,$4)",[alert,mail,subject,date]);
-    await client.query("INSERT INTO test_evidencias VALUES ($1,'soc-hackaton@sampol.com',$2,$3,$4,true,'test-gateway','test-source')",[mail,body,eml,JSON.stringify({eml_encoding:'utf8',eml_sha256:createHash('sha256').update(eml).digest('hex')})]);
+    await client.query("INSERT INTO reglas_bloqueo_auto VALUES ('AUTO-01',true,'USUARIO','{P1}','{CRITICO}','{INTRUSION}',1,30,false,'{}',15)");
+    await client.query("INSERT INTO test_alertas VALUES ($1,$2,'ana.perez@sampol.com','pc-madrid-001','P1','CRITICO','INTRUSION','NUEVA',false,true,'{}','soc-hackaton@sampol.com',$3,'Compromiso confirmado','AL-20261103-0001',null,$4,$4,$4,'Crítica')",[alert,mail,subject,date]);
+    await client.query("INSERT INTO test_evidencias VALUES ($1,'soc-hackaton@sampol.com',$2,$3,$4,true,'test-gateway','test-source',true)",[mail,body,eml,JSON.stringify({eml_encoding:'utf8',eml_sha256:createHash('sha256').update(eml).digest('hex')})]);
     await client.query("INSERT INTO acciones_bloqueo (accion_id,accion,usuario_objetivo,alerta_id,regla,estado,origen,fecha_solicitud) VALUES ($1,'BLOQUEAR','ana.perez@sampol.com',$2,'AUTO-01','PENDIENTE','AUTOMATICO',$3)",[id,alert,date]);
     return (await store.pending(1))[0];
    }
@@ -62,6 +67,22 @@ else{
     const api={find:async()=>reads++?record:null,block:async()=>({status:201,data:{bloqueo:record}})};
     assert.equal((await processAction(action,{store,settings,api,dryRun:false})).outcome,'verified');
     const row=(await client.query('SELECT * FROM acciones_bloqueo WHERE accion_id=$1',[action.accion_id])).rows[0];assert.equal(row.estado,'EJECUTADA');assert.equal(row.exito,true);assert.equal(row.respuesta_api.automation.phase,'verified');assert.equal(row.respuesta_api.automation.blockId,55);
+   });
+   await t.test('estados nuevos de cuarentena y liberación impiden un segundo POST',async()=>{
+    for(const state of ['EN_CURSO','DESCONOCIDO']){
+     const action=await seed();await client.query("INSERT INTO acciones_bloqueo (accion_id,accion,usuario_objetivo,estado,origen) VALUES ($1,'BLOQUEAR',$2,$3,'AUTOMATICO')",[randomUUID(),action.usuario_objetivo,state]);
+     assert.equal(await store.unresolved(action.usuario_objetivo,action.accion_id),true);
+     await client.query("UPDATE acciones_bloqueo SET accion='LIBERAR' WHERE estado=$1",[state]);
+     assert.equal(await store.releasedSince(action.usuario_objetivo,new Date(Date.now()-600000)),true);
+    }
+   });
+   await t.test('claim vuelve a validar lista blanca y política en su transacción',async()=>{
+    const action=await seed(),ctx=await store.context(action),meta={evidenceHash:ctx.evidence.cabeceras.eml_sha256};
+    await second.query("INSERT INTO lista_blanca VALUES ('USUARIO',$1,true)",[action.usuario_objetivo]);
+    assert.equal(await store.claim(action,meta),null);
+    assert.equal((await client.query('SELECT estado FROM acciones_bloqueo')).rows[0].estado,'PENDIENTE');
+    await second.query('DELETE FROM lista_blanca');await second.query('UPDATE reglas_bloqueo_auto SET activa=false');
+    assert.equal(await store.claim(action,meta),null);
    });
   }finally{await client.end();await second.end();}
  });
