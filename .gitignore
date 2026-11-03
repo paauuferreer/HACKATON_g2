@@ -48,3 +48,10 @@ yarn-error.log*
 .DS_Store
 
 /dist-pages/
+
+# Python (ingesta / BBDD PostgreSQL)
+.venv/
+__pycache__/
+*.pyc
+token_cache*.json
+*.eml
