@@ -78,6 +78,22 @@ La configuración está en `config_autenticacion`. Las reglas de bloqueo tienen 
 | `v_autenticidad_correos` | Por correo: verificado o no y por qué. También sirve para validar las directrices del director |
 | `v_autenticidad_resumen` | Recuento por remitente y motivo, sin contenidos |
 
+## Extracción y casos claros (migraciones 007 y 010, decisión D-007)
+- **007:** `texto_plano()` colapsa los espacios del HTML antes de convertir las etiquetas. Con eso se extraen bien usuario, equipo, sede, fuente, regla y criticidad del cuerpo. `reprocesar_alertas()` regenera las alertas desde la bandeja, solo si ninguna tiene revisión humana ni acciones de bloqueo.
+- **010, `autenticidad_correo()`:** en correo interno sin `Authentication-Results` se verifica con:
+  - la primera `Received-SPF` pass de `protection.outlook.com` para el dominio;
+  - `AuthAs Internal`, `AuthMechanism` y `AuthSource`;
+  - un único From;
+  - SHA-256.
+
+  Método: «Exchange interno: SPF pass + AuthAs Internal + SHA-256». Configuración en `config_autenticacion`: `aceptar_interno_sin_ar`, `verificador_spf` y `exigir_power_automate` (FALSE).
+- **010, regla AUTO-05** (AUTO-04 desactivada):
+  - asunto CRÍTICO con cualquier Px;
+  - cuerpo en `criticidades_cuerpo` ({critic, alt}), o en `criticidades_corroboradas` ({medi, baj}) con al menos `min_alertas_corroboracion` (2) alertas críticas del usuario en `ventana_corroboracion_min` (120). Sin esa corroboración, RECOMENDAR;
+  - sin antigüedad máxima;
+  - `inconsistencias_solo_ip`: una IP mal escrita no impide bloquear al usuario.
+- **010, `es_cuenta_protegida(usuario)`:** las cuentas de servicio o administración nunca se bloquean solas (RECOMENDAR). Las cuentas de otro dominio se descartan.
+
 ## Analítica temporal (migración 006, decisión D-004)
 Horas en Europe/Madrid. Columnas: `total` (carga, sin duplicados), `reales` (sin falsas alarmas ni no-SOC), `criticas`, `p1`.
 
