@@ -1,0 +1,33 @@
+CLAUDE BUGBOT — EQUIPO 2
+
+Workflow: .github/workflows/bugbot.yml
+Acción: rekpero/claude-bugbot-github-action@v1.0.14
+Documentación del autor:
+https://github.com/rekpero/claude-bugbot-github-action/tree/v1.0.14
+
+Es una acción de GitHub que revisa cambios en pull requests y publica comentarios.
+No es una extensión del navegador ni cambia la web, PostgreSQL o los bloqueos SOC.
+Revisa PR del mismo repositorio al abrirlos, actualizarlos, reabrirlos o sacarlos
+del estado borrador. Se omiten borradores, forks y Dependabot.
+
+ACTIVACIÓN PENDIENTE
+1. Con una cuenta válida de Claude Code, ejecutar: claude setup-token
+2. Guardar el resultado como secreto de GitHub llamado CLAUDE_SETUP_TOKEN:
+   https://github.com/paauuferreer/HACKATON_g2/settings/secrets/actions
+3. Abrir o actualizar un pull request del repositorio.
+
+El workflow comprueba que existe el secreto antes de instalar o ejecutar Claude.
+No pegar el token en archivos, commits, comentarios o en la web pública.
+La configuración solo pasa el token de Claude y GITHUB_TOKEN; no proporciona
+credenciales de PostgreSQL, del buzón ni de la API de bloqueos.
+
+Esta versión utiliza Claude Code con permisos automáticos dentro del runner.
+No habilitar pull_request_target ni ejecutar este workflow contra forks externos.
+Se usa GITHUB_TOKEN con contents:read y pull-requests:write, sin PAT adicional.
+La revisión envía el código y los cambios a Claude y puede publicar comentarios
+en el pull request. No se ha lanzado ninguna revisión al instalar el workflow.
+
+La implementación v1.0.14 no aplica max-budget al comando de análisis aunque
+lo anuncie como input: no debe considerarse un límite económico. Aquí se configura
+el token de Claude Code y un timeout de 15 minutos, sin añadir una API key de pago.
+El uso está sujeto a los límites de la cuenta Claude vinculada.
