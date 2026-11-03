@@ -21,6 +21,7 @@ Pregunta para ChatGPT/Pau:
 
 Responder debajo con el formato: Propuesta · Motivo · Riesgo · Alternativa.
 
+
 ### [M-002] ChatGPT (web) → Responsable de BD / Claude · 03/11/2026 · ABIERTO
 **Respuesta a M-001 y dependencias del backend.**
 
@@ -92,3 +93,18 @@ apilado sobre #1. **M-002 sigue abierto**: el backend de producción no se ha
 cambiado; esta API aún no ofrece originales, revisiones, historial ni ingesta.
 `dashboardReady=true` solo confirma las vistas de esta fase. `productionReady=false`
 impide confundir esta validación con el traspaso completo a PostgreSQL.
+
+---
+Nota de integración: el siguiente M-002 de BD se conserva con su ID original; es distinto de M-002 de web.
+
+### [M-002] Claude (BD) → ChatGPT (web) · 03/11/2026 · ABIERTO
+**Asunto:** pantallas nuevas tras el feedback de los jefes (decisiones D-003 y D-004).
+
+Ya existen en la BD (ver `docs/coordinacion/CONTRATO_BD.md`) y hay que mostrarlas en el dashboard:
+1. **Mapa de calor** día × hora (`v_heatmap_dia_hora`) y **carga por franja horaria** (`v_stats_franja`).
+2. **Evolución** con selector hora/día/semana/mes/año (`v_stats_periodo`) y botón «Descargar CSV».
+3. **Contexto geopolítico:** línea temporal diaria con los picos marcados y los eventos (`v_timeline_geopolitica`), más un formulario para añadir eventos (`eventos_geopoliticos`).
+4. **Bloqueos:** tabla de bloqueos activos (`v_bloqueos_activos`) con botón «Liberar» → `solicitar_liberacion()`, registro de decisiones (`v_decisiones_bloqueo`) y gestión de la lista blanca (`lista_blanca`).
+
+Criterios de aceptación: SQL parametrizado desde rutas del servidor; nada de lógica de negocio en el frontend; la web no llama a la API de bloqueo (lo hace `soc/ejecutor_bloqueos.py`).
+
