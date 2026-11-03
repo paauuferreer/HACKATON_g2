@@ -100,3 +100,16 @@ Formato: ID · fecha/hora · decisión · motivo · quién decide · estado.
   - Arranca en simulación.
   - Necesita `Mail.ReadWrite` delegado; `MailboxSettings.ReadWrite` es opcional y solo sirve para los colores.
 - **Decide:** responsable de BD. **Estado:** implementada (migración 011) y probada en local con 14 correos. Pendiente de aplicar en Azure y de ejecutar el script.
+
+## D-009 · 03/11/2026 · Detección temprana de la cadena de ransomware (AUTO-06) y contención preventiva
+- **Hechos:** el buzón muestra una intrusión que salta de cuenta en cuenta cada ~72 min (jmoreno → amoreno → cmoreno → bmoreno → dmoreno → emoreno → fmoreno → gmoreno; equipos 201-208 en seis sedes).
+  - **Vía de credenciales:** phishing → fuerza bruta → acceso no reconocido → lectura indebida → mando y control → alteración de ficheros.
+  - **Vía de explotación:** sondeo de puertos → petición con explotación → proceso anómalo → mando y control → alteración.
+  - El acceso no reconocido llega **39-46 min antes** que la primera alerta crítica.
+- **Decisión:**
+  - **Fases del ataque** (migración 012): se asignan por el título, con una tabla editable. Vistas `v_fases_alertas`, `v_cadena_victimas`, `v_cadena_ransomware` y `v_cadena_prediccion`.
+  - **Regla AUTO-06** (migración 013): bloquea al usuario cuando hay cuenta comprometida precedida de phishing o fuerza bruta en 2 h. Mismos filtros de seguridad que AUTO-05; ignora la discrepancia de gravedad entre asunto y cuerpo, porque aquí la prueba es la secuencia.
+  - **Simulación:** reconoce las 5 víctimas de la vía de credenciales, descarta los 6 accesos sueltos y da 0 falsos positivos.
+  - **Contención preventiva manual** (equipo, D-007): fmoreno (acceso no reconocido, 22:41) y gmoreno (explotación, 23:33).
+- **Corrección (migración 014):** la corroboración contaba el reenvío de la misma alerta como una segunda alerta. slopez@ pasó a BLOQUEAR por error. Ahora se cuentan IDs del SOC distintos; slopez pasa a RECOMENDAR y su acción queda OMITIDA (nunca se envió).
+- **Decide:** responsable de BD. **Estado:** aplicada en Azure (el 03/11 con los nombres 011-013; renumeradas a 012-014 el 04/11 porque la 011 pasó a ser la organización de Outlook). Línea temporal para la presentación publicada como página (privada; compartir desde su menú).

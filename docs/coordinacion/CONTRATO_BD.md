@@ -94,6 +94,23 @@ La configuración está en `config_autenticacion`. Las reglas de bloqueo tienen 
   - `inconsistencias_solo_ip`: una IP mal escrita no impide bloquear al usuario.
 - **010, `es_cuenta_protegida(usuario)`:** las cuentas de servicio o administración nunca se bloquean solas (RECOMENDAR). Las cuentas de otro dominio se descartan.
 
+## Cadena de ransomware y detección temprana (migraciones 012-014, decisión D-009)
+- `fases_ataque`: fase, orden y patrón sobre el título plegado (editable). `fase_de_titulo(titulo)` devuelve la fase.
+- Vistas (solo lectura; horas en Europe/Madrid; «aviso» = llegada del correo):
+
+| Vista | Uso |
+|---|---|
+| `v_fases_alertas` | Alerta → víctima (inferida por equipo si falta el usuario), fase y fechas |
+| `v_cadena_victimas` | Cuentas con al menos 3 fases: orden, equipos, sedes, fase máxima, `min_ganados_detectando_compromiso` y estado del bloqueo |
+| `v_cadena_ransomware` | Detalle por fase con `min_desde_fase_anterior` y `min_desde_inicio_victima` |
+| `v_cadena_prediccion` | Ritmo medio entre víctimas y hora estimada de la siguiente (evento y aviso) |
+
+- **Regla AUTO-06:**
+  - se evalúa con `evaluar_cadena_compromiso(alerta)`, mediante el trigger `trigger_cadena_compromiso`, o con `evaluar_cadena_pendientes(horas)`;
+  - columnas `fase_disparadora`, `fases_previas` y `min_fases_previas`;
+  - tiene las peligrosidades vacías, así que `evaluar_bloqueo_auto()` nunca la elige.
+- **014:** la corroboración y `min_alertas` cuentan IDs del SOC distintos, no filas.
+
 ## Analítica temporal (migración 006, decisión D-004)
 Horas en Europe/Madrid. Columnas: `total` (carga, sin duplicados), `reales` (sin falsas alarmas ni no-SOC), `criticas`, `p1`.
 
@@ -137,3 +154,12 @@ Reglas de carpeta, por orden:
 12. SOC · Medias y bajas.
 
 Los correos aún sin procesar se quedan en la Bandeja de entrada.
+
+## Organización de Outlook: ajustes del despliegue (migraciones 015 y 016, BD-011)
+- **015:** en `v_outlook_destino`, el motivo «Menciona herramientas de IA o prompts» deja de mandar a cuarentena **solo** si el remitente es externo, el correo tiene cabeceras de transporte, no es una alerta del SOC y no intenta imponer una clasificación. Ese correo pasa a «06 No SOC». Las mismas columnas que en la 011.
+- **016, plan B sin Client ID:** Power Automate ordena el buzón con su conexión de Outlook (guía en `docs/POWER-AUTOMATE-OUTLOOK.md`).
+
+| Objeto | Uso |
+|---|---|
+| `v_outlook_pendientes_pa` | Cola para Power Automate: `correo_id` (texto), `id_outlook`, `carpeta_codigo`, `carpeta_ruta`, `categorias_json`, `huella`, `fecha_hora_correo`. Vacía si `config_outlook.organizacion_activa` es FALSE |
+| `outlook_resultados_pa` | Power Automate **solo inserta** (`correo_id`, `huella`, `carpeta_codigo`, `graph_message_id`, `estado` APLICADO/NO_ENCONTRADO/ERROR, `detalle`). El trigger lo registra con `registrar_sincronizacion_outlook()` |
