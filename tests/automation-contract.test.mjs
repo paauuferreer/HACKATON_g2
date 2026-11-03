@@ -31,6 +31,13 @@ else{
     assert.equal((await original(['From: soc-hackaton@sampol.com'])).verificada,false);
     assert.equal((await original([],authHeader,false)).verificada,false);
    });
+   await t.test('Exchange interno: SPF superior y sellos completos; rechaza fallo y sello ausente',async()=>{
+    const seals=['X-MS-Exchange-Organization-AuthMechanism: 04','X-MS-Exchange-Organization-AuthSource: test.outlook.com'];
+    const spf='Received-SPF: Pass (protection.outlook.com: domain of sampol.com designates sender)';
+    assert.equal((await original(seals,spf)).verificada,true);
+    assert.equal((await original([...seals,spf],'Received-SPF: Fail (protection.outlook.com: domain of sampol.com)')).verificada,false);
+    assert.equal((await original([],spf)).verificada,false);
+   });
    assert.equal(Number((await client.query('SELECT count(*) FROM acciones_bloqueo')).rows[0].count),0);
   }finally{await client.end();}
  });

@@ -19,8 +19,9 @@ export function postgresStore(client,settings){
  }
  const store={
   async readiness(){
-   const rows=(await query("SELECT table_name,column_name FROM information_schema.columns WHERE table_schema='public' AND table_name IN ('acciones_bloqueo','lista_blanca','reglas_bloqueo_auto','v_alertas','v_evidencias_automatizacion')")).rows;
+   const rows=(await query("SELECT table_name,column_name FROM information_schema.columns WHERE table_schema='public' AND table_name IN ('acciones_bloqueo','lista_blanca','reglas_bloqueo_auto','v_alertas','v_evidencias_automatizacion','decisiones_bloqueo_auto')")).rows;
    const required={acciones_bloqueo:['accion_id','estado','origen','respuesta_api','simulacion'],lista_blanca:['tipo','usuario','activo'],reglas_bloqueo_auto:['regla_id','activa','exigir_criticidad_cuerpo','inconsistencias_ignoradas','antiguedad_max_minutos'],v_alertas:['correo_id','remitente_confianza','inconsistencias','criticidad_cuerpo'],v_evidencias_automatizacion:['correo_id','remitente_correo','cuerpo_correo_raw','eml_raw','cabeceras','autenticacion_verificada','autenticacion_metodo','autenticacion_emisor','integridad_ok']};
+   if(settings.policy==='sql'){required.decisiones_bloqueo_auto=['accion_id','alerta_id','regla_id','tipo_objetivo','valor_objetivo','decision'];required.reglas_bloqueo_auto.push('criticidades_cuerpo','criticidades_corroboradas','min_alertas_corroboracion','ventana_corroboracion_min');}
    const missing=[];for(const [table,columns] of Object.entries(required))for(const column of columns)if(!rows.some(r=>r.table_name===table&&r.column_name===column))missing.push(`${table}.${column}`);
    return {ready:missing.length===0,missing};
   },
