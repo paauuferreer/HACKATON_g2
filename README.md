@@ -42,7 +42,7 @@ Base: https://hackathon-api-a6ckg4g2ejg4cda4.francecentral-01.azurewebsites.net
 
 La aplicación extrae IPv4 y cuentas de correo; no ejecuta contención al recibir
 un mensaje. No reintenta automáticamente los POST de contención.
-La clave aún debe configurarse en Sites para operar. No se incluyen credenciales.
+La clave ya está configurada como secreto en Sites. Consulta de lectura verificada con HTTP 200 el 03/11/2026. No se incluyen credenciales en Git ni se han ejecutado bloqueos reales.
 
 ## Outlook y Power Automate
 
@@ -77,3 +77,4 @@ requieren coordinarse con el responsable de la base de datos.
 Reglas explicables y revisión humana; no certificación INCIBE. Los adjuntos
 binarios se conservan en EML y requieren análisis manual. La importación histórica
 inicial está limitada a 1.000 mensajes de Inbox. No se han ejecutado bloqueos reales.
+
