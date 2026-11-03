@@ -38,11 +38,11 @@ export function IpActivity({connected,refreshKey,onInvestigate}:any){
  return <div className="ip-activity">
   <section className="panel ip-filters" aria-label="Filtros de actividad de IP">
    <div className="ip-heading"><div><span className="eyebrow">ANÁLISIS TEMPORAL</span><h2>Puntos calientes de IP</h2><p>Localiza qué direcciones concentran alertas y en qué momentos.</p></div><span className="ip-timezone">Europe/Madrid</span></div>
-   <form onSubmit={e=>{e.preventDefault();apply({...draft,ip:draft.ip.trim()});}}>
-    <label>Desde<input type="date" required value={draft.from} onChange={e=>setDraft({...draft,from:e.target.value})}/></label>
-    <label>Hasta<input type="date" required min={draft.from||undefined} value={draft.to} onChange={e=>setDraft({...draft,to:e.target.value})}/></label>
-    <label>Fecha utilizada<select value={draft.basis} onChange={e=>setDraft({...draft,basis:e.target.value})}><option value="event">Momento del evento</option><option value="received">Recepción del correo</option></select></label>
-    <label className="ip-search">Dirección IP<input type="search" value={draft.ip} maxLength={45} placeholder="Todas las direcciones" list="ip-options" onChange={e=>setDraft({...draft,ip:e.target.value})}/><datalist id="ip-options">{data?.ranking?.map((r:any)=><option key={r.ip} value={r.ip}/>)}</datalist></label>
+   <form onSubmit={e=>{e.preventDefault();const fields=new FormData(e.currentTarget);apply({from:String(fields.get('from')||''),to:String(fields.get('to')||''),basis:String(fields.get('basis')||'event'),ip:String(fields.get('ip')||'').trim()});}}>
+    <label>Desde<input name="from" type="date" required value={draft.from} onInput={e=>{const value=e.currentTarget.value;setDraft(d=>({...d,from:value}));}}/></label>
+    <label>Hasta<input name="to" type="date" required min={draft.from||undefined} value={draft.to} onInput={e=>{const value=e.currentTarget.value;setDraft(d=>({...d,to:value}));}}/></label>
+    <label>Fecha utilizada<select name="basis" value={draft.basis} onChange={e=>setDraft({...draft,basis:e.target.value})}><option value="event">Momento del evento</option><option value="received">Recepción del correo</option></select></label>
+    <label className="ip-search">Dirección IP<input name="ip" type="search" value={draft.ip} maxLength={45} placeholder="Todas las direcciones" list="ip-options" onChange={e=>setDraft({...draft,ip:e.target.value})}/><datalist id="ip-options">{data?.ranking?.map((r:any)=><option key={r.ip} value={r.ip}/>)}</datalist></label>
     <button className="button primary" type="submit" disabled={!connected}><Search size={14}/>Aplicar</button>
    </form>
    <div className="ip-filter-footer"><button className="text-button" onClick={()=>apply(initial)}>Últimos 14 días disponibles</button><span>Máximo 93 días · se consulta todo el histórico guardado</span></div>
