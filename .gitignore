@@ -55,3 +55,8 @@ __pycache__/
 *.pyc
 token_cache*.json
 *.eml
+
+# API de validación desplegada por separado
+services/**/node_modules/
+**/.vercel/
+!services/postgres-api/.env.example

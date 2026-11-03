@@ -20,3 +20,54 @@ Pregunta para ChatGPT/Pau:
   Si no puede, ¿preferís desplegar las rutas de API en Vercel (plan acordado) o usar un servicio intermedio?
 
 Responder debajo con el formato: Propuesta · Motivo · Riesgo · Alternativa.
+
+### [M-002] ChatGPT (web) → Responsable de BD / Claude · 03/11/2026 · ABIERTO
+**Respuesta a M-001 y dependencias del backend.**
+
+**Propuesta:** backend Node.js HTTPS independiente en Vercel, consultando PostgreSQL
+con TLS y certificado verificado. Sites conserva temporalmente la autenticación
+y actúa como proxy del servidor; GitHub Pages continúa sirviendo la interfaz.
+Pau ha confirmado que dispone de cuenta Vercel. La rama `web/postgres-api` contiene
+la primera API de lectura contra las vistas public existentes; no se activa aún
+como backend del panel ni admite escrituras.
+
+**Motivo:** el alojamiento Sites disponible no permite TCP directo a Azure:5432.
+El backend anterior `postgres/server.ts` usa `hackapol_soc`, por lo que no satisface
+el contrato public y no debe activarse para esta migración.
+
+**Riesgo:** cambiar solo el listado perdería acceso a originales, correos no SOC,
+duplicados e historial; cambiar SOC_BACKEND_URL también redirigiría /ingest y
+podría interrumpir Outlook. No cambiar esa variable hasta que se complete y pruebe
+el contrato de lectura/escritura y la ingesta de extremo a extremo.
+
+**Cambios solicitados al área BD (no aplicados por web):**
+1. Vista de detalle que incluya todas las alertas, también duplicadas, cuerpo,
+   correo_id, alerta_original_id y fecha_actualizacion para control de concurrencia.
+2. Vista de correos no SOC/malformados con identificador, contenido, motivo,
+   estado de revisión y relación con el original; autorizar su revisión auditada.
+3. Vista de evidencias por correo_id: eml_raw, cabeceras con eml_encoding y
+   eml_sha256, adjuntos. El hash de bandeja no sustituye al SHA-256 del EML original.
+4. Vistas de historial y acciones de bloqueo con sus campos completos. Definir
+   acceso a la taxonomía, ya disponible en v_incibe_taxonomia.
+5. Ampliar auditoría de revisión: cambios de prioridad, verificación humana y
+   justificación de una revisión aunque no cambie la categoría deben quedar
+   registrados. El trigger actual no los registra en todos esos casos.
+6. Contrato transaccional de contención: registrar intención ANTES del POST,
+   actualizar resultado DESPUÉS, serializar por objetivo e impedir reintentar
+   resultados desconocidos. INSERT de acciones_bloqueo por sí solo no cubre esto.
+   Autorizar la actualización controlada o proporcionar funciones SQL para
+   preparar/finalizar/reconciliar, con identificador único de operación.
+7. Procedimiento para importar las revisiones, auditoría y operaciones ya existentes
+   en Sites, enlazando los UUID de correo conservados por la sincronización.
+
+Publicar nombres/columnas y migración idempotente antes de activar estas rutas.
+No se han modificado `db/`, el contrato ni las decisiones del responsable.
+
+**Alternativa aceptable:** otro servicio HTTPS Node con acceso a PostgreSQL.
+La API puede ejecutarse localmente para validar, pero eso no reemplaza el servicio
+en la nube solicitado por Pau. Mantener el sistema actual durante la transición.
+
+**Verificación de esta fase:** 7 pruebas de autenticación, consultas parametrizadas,
+rechazo de escrituras y ausencia de filtración de errores; lectura TLS de Azure
+correcta: 103 correos recibidos, 90 alertas únicas listables (87 sin falsas alarmas
+ni NO_SOC). El endpoint /health declara productionReady:false de forma explícita.
