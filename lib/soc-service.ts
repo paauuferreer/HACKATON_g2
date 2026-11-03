@@ -1,10 +1,16 @@
 import {db,json,HttpError,config,runtimeEnv,performAction,reconcile} from './backend';
 import {incibeClasses,incidentStates,statistics} from './taxonomy.mjs';
 import {analyze} from './soc.mjs';
+import {ipActivity,ActivityInputError} from './ip-activity.mjs';
 export function rowToIncident(r:any){let analysis=JSON.parse(r.analysis);if(!analysis.incibeClass)analysis={...analysis,...analyze(r.subject,r.body||''),previousRuleVersion:analysis.ruleVersion};return {id:r.id,subject:r.subject,sender:r.sender,receivedAt:r.received_at,body:r.body,analysis,status:r.status==='Pendiente'?'Nueva':r.status,evidenceHash:r.evidence_hash,duplicateOf:r.duplicate_of,revision:r.revision||0,updatedAt:r.updated_at};}
 export function canApprove(actor:string){return String(runtimeEnv().APPROVER_EMAILS||'').toLowerCase().split(',').map(s=>s.trim()).includes(actor.toLowerCase());}
 export async function readSoc(request:Request,actor:string){
  const url=new URL(request.url),view=url.searchParams.get('view');
+ if(view==='ip-activity'){
+  const rows=await db().prepare('SELECT id,subject,body,analysis,status,received_at,duplicate_of FROM incidents').all();
+  try{return json(ipActivity(rows.results.map(rowToIncident),url.searchParams));}
+  catch(error){if(error instanceof ActivityInputError)throw new HttpError(400,error.message);throw error;}
+ }
  if(view==='evidence'){
   const row=await db().prepare('SELECT evidence_key,evidence_hash FROM incidents WHERE id=?').bind(url.searchParams.get('id')||'').first() as any;
   if(!row)throw new HttpError(404,'Evidencia no encontrada.');const object=await runtimeEnv().BUCKET.get(row.evidence_key);if(!object)throw new HttpError(404,'Original no disponible.');
