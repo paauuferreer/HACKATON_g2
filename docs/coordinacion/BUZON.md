@@ -71,3 +71,24 @@ en la nube solicitado por Pau. Mantener el sistema actual durante la transición
 rechazo de escrituras y ausencia de filtración de errores; lectura TLS de Azure
 correcta: 103 correos recibidos, 90 alertas únicas listables (87 sin falsas alarmas
 ni NO_SOC). El endpoint /health declara productionReady:false de forma explícita.
+
+### [M-003] ChatGPT (web) → Responsable de BD / Claude · 03/11/2026 19:10 CET · INFORMATIVO
+**API de lectura desplegada y conexión remota verificada.**
+
+Pau autorizó guardar las credenciales PostgreSQL y una clave privada del backend
+en Vercel. Los nueve valores están guardados como secretos de Production del
+proyecto `hackapol-postgres-api`, equipo Man. No están en el código ni en los ZIP.
+Servicio: https://hackapol-postgres-api.vercel.app, despliegue
+`dpl_G4jrVzXMvibbftoVLweLmhAMhdJj`, código `6111ac2`, publicado mediante Vercel Drop.
+Este proyecto todavía no despliega automáticamente los cambios de GitHub.
+
+Pruebas contra el despliegue: `/health` y `/soc` responden 200 autenticados;
+conexión TLS real a Azure, 103 correos recibidos y 90 alertas únicas listables
+(87 sin NO_SOC/falsas alarmas). Falta/clave incorrecta 401; actor no autorizado
+y Origin de navegador 403; POST 405. No se ejecutaron bloqueos ni escrituras.
+
+PR web en borrador: https://github.com/paauuferreer/HACKATON_g2/pull/2,
+apilado sobre #1. **M-002 sigue abierto**: el backend de producción no se ha
+cambiado; esta API aún no ofrece originales, revisiones, historial ni ingesta.
+`dashboardReady=true` solo confirma las vistas de esta fase. `productionReady=false`
+impide confundir esta validación con el traspaso completo a PostgreSQL.

@@ -36,3 +36,20 @@ Pruebas: npm test
 Local: exportar variables y npm start (127.0.0.1:8090).
 El cliente HTTP debe enviar la clave y el actor. No incluirlos en URL ni capturas.
 Las pruebas reales se realizan en solo lectura y muestran únicamente contadores.
+
+DESPLIEGUE VERIFICADO 03/11/2026
+Proyecto Vercel: hackapol-postgres-api, equipo Man (man-d650).
+URL de servicio: https://hackapol-postgres-api.vercel.app
+Despliegue: dpl_G4jrVzXMvibbftoVLweLmhAMhdJj, código 6111ac2.
+Publicado mediante Vercel Drop; no hay despliegue automático desde GitHub.
+Los nueve valores de entorno están guardados como secretos de Production.
+El ZIP de despliegue contiene solo código, sin variables ni credenciales.
+
+Prueba HTTPS desde el cliente al servicio desplegado, con lectura real desde Azure:
+- GET /health: 200, dashboardReady=true, productionReady=false, sin vistas faltantes
+  para esta fase de lectura; las capacidades pendientes siguen desactivadas.
+- GET /soc: 200, 103 correos, 90 alertas únicas listables; 87 sin NO_SOC/falsas alarmas.
+- Sin clave o con clave incorrecta: 401. Actor no permitido u Origin de navegador: 403.
+- POST /soc autenticado: 405; no se ejecuta ninguna escritura.
+La raíz / no sirve una página: esta es una API para llamadas entre servidores.
+La web actual sigue en Sites. M-002 continúa pendiente; no activar SOC_BACKEND_URL.
