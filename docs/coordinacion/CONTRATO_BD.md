@@ -63,6 +63,21 @@ Bloqueo manual desde la web: `INSERT INTO acciones_bloqueo (accion, ip_objetivo 
 
 Columnas nuevas de `reglas_bloqueo_auto`: `antiguedad_max_minutos` (15), `exigir_criticidad_cuerpo`, `inconsistencias_ignoradas` (patrones LIKE) e `ip_automatica` (FALSE).
 
+## Autenticidad del remitente (migración 009, decisión D-006)
+`autenticidad_correo(correo_id)` → `verificada, metodo, emisor, motivo, integridad_ok`. Solo usa el original EML y su SHA-256. Las comprobaciones, en orden:
+1. Un único `From`, igual a `remitente_correo` y del dominio `sampol.com`.
+2. La **primera** cabecera `Authentication-Results` la firma `mx.microsoft.com` e indica `dmarc=pass` con `header.from=sampol.com`.
+3. `X-MS-Exchange-Organization-AuthAs: Internal`.
+4. Para `soc-hackaton@`, además: `x-ms-mail-application: Microsoft Power Automate`.
+
+La configuración está en `config_autenticacion`. Las reglas de bloqueo tienen `requiere_autenticacion` (TRUE por defecto).
+
+| Vista | Uso |
+|---|---|
+| `v_evidencias_automatizacion` | Contrato del ejecutor web: ahora con valores reales, más `autenticacion_motivo` e `integridad_ok` al final |
+| `v_autenticidad_correos` | Por correo: verificado o no y por qué. También sirve para validar las directrices del director |
+| `v_autenticidad_resumen` | Recuento por remitente y motivo, sin contenidos |
+
 ## Analítica temporal (migración 006, decisión D-004)
 Horas en Europe/Madrid. Columnas: `total` (carga, sin duplicados), `reales` (sin falsas alarmas ni no-SOC), `criticas`, `p1`.
 

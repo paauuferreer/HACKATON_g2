@@ -39,3 +39,18 @@ Formato: ID · fecha/hora · decisión · motivo · quién decide · estado.
   2. Verificar la autenticidad del remitente con las cabeceras reales.
   3. Decidir la fecha de activación (`AUTOMATION_START_AT`).
 - **Decide:** responsable de BD, que delegó en Claude («haz lo que consideres mejor»), junto con la petición de Pau recogida en WEB-004. **Estado:** implementada (migración 008), pendiente de aplicar en Azure después de la 007.
+
+## D-006 · 03/11/2026 · Autenticidad del remitente a partir de las cabeceras del original
+- **Hechos:** se revisaron en Outlook las cabeceras de un correo real del SOC (AL-20261030-0048) y de uno interno de una persona.
+  - Los dos tienen `spf=pass`, `dmarc=pass` y `AuthAs: Internal`. DKIM = none, por el relay de CodeTwo.
+  - Solo el del SOC lo envía un flujo de **Power Automate**.
+- **Decisión:** un correo es auténtico si:
+  1. El original está íntegro (SHA-256).
+  2. Tiene un único From, del dominio.
+  3. La **primera** cabecera Authentication-Results, la de nuestro servidor, da DMARC pass.
+  4. Tiene `AuthAs Internal`.
+  5. Para el SOC, además, viene de Power Automate.
+
+  Nunca se usa el texto del correo ni `remitentes_confianza`. El bloqueo automático exige autenticidad verificada.
+- **Pendiente:** confirmar que el EML exportado por Power Automate conserva esas cabeceras (BD-007). Si falta `AuthAs`, se desactiva `exigir_authas_internal` y se anota aquí.
+- **Decide:** responsable de BD. **Estado:** implementada (migración 009) y probada en local con 8 casos. Pendiente de aplicar en Azure.

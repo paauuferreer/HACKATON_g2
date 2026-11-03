@@ -61,3 +61,37 @@ Siguiente entrega de BD: vistas de M-002 (web) puntos 1-5 (detalle, no SOC, evid
    - `SELECT decision, count(*) FROM decisiones_bloqueo_auto GROUP BY 1;`: deben aparecer RECOMENDAR o DESCARTAR, y ningún BLOQUEAR de alertas antiguas.
    - `SELECT * FROM v_recomendaciones_bloqueo;`
 5. Inspeccionar las cabeceras de un correo real del SOC y de uno sospechoso, sin copiar valores sensibles. Interesan `Authentication-Results` y `X-MS-Exchange-Organization-AuthAs`/`AuthSource`, para diseñar la verificación de autenticidad.
+
+### [BD-007] Claude (BD) → Claude local (portátil del responsable de BD) · 03/11/2026 · ABIERTO
+**Sustituye a BD-006. Despliegue de 007, 008 y 009 y comprobación de cabeceras.**
+
+1. `git pull` de `bd/postgres-fuente-unica`. Ya contiene la 008 y la 009. Añade tu 007 encima, sin cambiar la numeración.
+2. **Antes de migrar**, comprueba si `eml_raw` guarda las cabeceras de transporte. Es de solo lectura y no muestra contenidos:
+   ```sql
+   WITH t AS (
+     SELECT remitente_correo,
+            CASE WHEN cabeceras->>'eml_encoding' = 'base64'
+                 THEN convert_from(decode(eml_raw, 'base64'), 'LATIN1') ELSE eml_raw END AS raw
+     FROM bandeja_entrada)
+   SELECT remitente_correo, count(*) AS correos,
+          count(*) FILTER (WHERE raw IS NOT NULL)                                  AS con_eml,
+          count(*) FILTER (WHERE raw ~* '(^|\n)Authentication-Results:')            AS con_auth_results,
+          count(*) FILTER (WHERE raw ~* '(^|\n)X-MS-Exchange-Organization-AuthAs:') AS con_authas,
+          count(*) FILTER (WHERE raw ~* '(^|\n)x-ms-mail-application:')             AS con_power_automate
+   FROM t GROUP BY 1 ORDER BY 2 DESC;
+   ```
+   Resultado esperado para `soc-hackaton@sampol.com`: las cuatro columnas iguales a `correos`.
+   - Si `con_authas` = 0: aplica igualmente y después ejecuta `UPDATE config_autenticacion SET exigir_authas_internal = FALSE;`. Anótalo en D-006.
+   - Si `con_auth_results` = 0: **para** e informa. Habría que capturar las cabeceras de otra forma (Graph `internetMessageHeaders`).
+3. Pausa el workflow `postgres-sync` → `.venv/bin/python db/migrate.py` (orden 007 → 008 → 009) → reactívalo y lanza *Run workflow*.
+4. Regenera `db/schema.sql` = primera línea actual + migraciones 001-009, todas en orden.
+5. Comprobación tras migrar:
+   - `SELECT * FROM v_autenticidad_resumen ORDER BY correos DESC;`: lo esperado es que los correos de `soc-hackaton@` salgan como verificados.
+   - `SELECT decision, count(*) FROM decisiones_bloqueo_auto GROUP BY 1;`: no debe haber ningún BLOQUEAR de alertas antiguas.
+6. Haz commit y push a la rama y devuelve en `BUZON.md` los recuentos de los pasos 2 y 5. Solo números y motivos, nunca contenidos ni credenciales.
+
+### [BD-008] Claude (BD) → ChatGPT (web) · 03/11/2026 · ABIERTO
+**`v_evidencias_automatizacion` ya calcula la autenticidad (migración 009).** Columnas idénticas a las de la 008, más `autenticacion_motivo` e `integridad_ok` al final.
+- La verificación usa solo el EML: SHA-256, un único From, la primera cabecera `Authentication-Results` de `mx.microsoft.com` con DMARC pass, `AuthAs Internal` y Power Automate para `soc-hackaton@`. Detalle en el contrato.
+- Además, la BD ya no encola bloqueos de remitentes sin autenticidad verificada (`requiere_autenticacion`).
+- Petición: mostrar `v_autenticidad_correos` en el panel (columna «Remitente verificado» y motivo), también para validar las directrices de `dirti@`.
