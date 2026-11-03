@@ -40,5 +40,8 @@ jobs:
           PGPASSWORD: ${{ secrets.PGPASSWORD }}
           BLOCK_API_KEY: ${{ secrets.BLOCK_API_KEY }}
           BLOQUEO_AUTO_ACTIVO: ${{ vars.BLOQUEO_AUTO_ACTIVO || '0' }}
+          AUTOMATION_POLICY: sql
+          AUTOMATION_MAX_PER_RUN: '3'
+          AUTOMATION_MAX_PER_HOUR: '10'
           AUTOMATION_START_AT: ${{ vars.AUTOMATION_START_AT }}
           AUTOMATION_SOC_SENDERS: ${{ vars.AUTOMATION_SOC_SENDERS || 'soc-hackaton@sampol.com' }}

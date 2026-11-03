@@ -14,7 +14,7 @@ else{
   url.pathname='/automation_contract_test';const client=new pg.Client({connectionString:url.href});await client.connect();
   try{
    const dir=new URL('../db/migrations/',import.meta.url);
-   const files=(await readdir(dir)).filter(x=>/^00[1-9]_.*\.sql$/.test(x)).sort();
+   const files=(await readdir(dir)).filter(x=>/^0[0-9]{2}_.*\.sql$/.test(x)).sort();
    for(const file of files)await client.query(await readFile(new URL(file,dir),'utf8'));
    const authHeader='Authentication-Results: mx.microsoft.com 1; spf=pass; dmarc=pass header.from=sampol.com;';
    async function original(extra=[],auth=authHeader,hashOK=true){

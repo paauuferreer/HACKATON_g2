@@ -7,7 +7,7 @@ import {blockingApi} from './automation-api.mjs';
 
 export async function main(env=process.env,args=process.argv.slice(2)){
  const settings=runtimeSettings(env),dryRun=args.includes('--dry-run')||!settings.enabled;
- if(!dryRun&&(!Number.isFinite(settings.startAt)||!env.BLOCK_API_KEY&&!env.API_TOKEN))throw new Error('Configuración de activación incompleta');
+ if(!dryRun&&(settings.policy!=='sql'&&!Number.isFinite(settings.startAt)||!env.BLOCK_API_KEY&&!env.API_TOKEN))throw new Error('Configuración de activación incompleta');
  const client=new pg.Client({host:env.PGHOST,port:Number(env.PGPORT||5432),user:env.PGUSER,password:env.PGPASSWORD,database:env.PGDATABASE,
   ssl:{rejectUnauthorized:true},connectionTimeoutMillis:10000,statement_timeout:15000,options:`-c timezone=UTC${dryRun?' -c default_transaction_read_only=on':''}`,application_name:'hackapol-automation-v1'});
  try{

@@ -136,3 +136,17 @@ test('clave rechazada detiene la activación incluso antes de consumir la cola',
  const api=blockingApi('test',async(url,options)=>{assert.equal(options.method,'GET');return {status:401,text:async()=>'{"detail":"Unauthorized"}'};});
  await assert.rejects(()=>api.check(),e=>e.safeCode==='BLOCK_API_AUTH_FAILED');
 });
+
+function sqlFixture(){const f=fixture();f.settings.policy='sql';f.evidence.integridad_ok=true;f.rule.sqlDecisionApproved=true;f.rule.criticidades_cuerpo=['critic','alt'];f.rule.criticidades_corroboradas=['medi','baj'];f.alert.criticidad_cuerpo='Alta';f.evidence.cuerpo_correo_raw+=' Pendiente de validacion por Hackapol. No ejecutar una contención sin autorización del responsable.';return f;}
+test('SQL admite plantilla con decisión verificada e histórico gobernado por regla',()=>{const f=sqlFixture();f.alert.fecha_hora_evento='2026-10-30T10:00:00Z';assert.equal(assess(f).eligible,true);});
+for(const [name,mutate] of negativeCases.filter(([name])=>!['tipo de activo desconocido','texto pide validación','sin compromiso confirmado','histórico antes de activación','alerta antigua aunque llegue ahora'].includes(name)))test('SQL: '+name,()=>{const f=sqlFixture();mutate(f);assert.equal(assess(f).eligible,false);});
+for(const [name,mutate] of [
+ ['sin decisión SQL',f=>f.rule.sqlDecisionApproved=false],
+ ['sin integridad de BD',f=>f.evidence.integridad_ok=false],
+ ['alerta duplicada',f=>f.alert.es_duplicada=true],
+ ['simulación',f=>f.action.simulacion=true],
+ ['otra alerta',f=>f.action.alerta_id='otra'],
+ ['criticidad ausente',f=>f.alert.criticidad_cuerpo=null],
+ ['edad SQL vencida',f=>f.rule.antiguedad_max_minutos=1],
+ ['petición en infinitivo',f=>f.evidence.cuerpo_correo_raw+=' Solicito bloquear esa cuenta.']
+])test('SQL: '+name,()=>{const f=sqlFixture();mutate(f);assert.equal(assess(f).eligible,false);});

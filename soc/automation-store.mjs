@@ -29,13 +29,18 @@ export function postgresStore(client,settings){
   async pending(limit){return (await query("SELECT *,host(ip_objetivo) AS ip FROM public.acciones_bloqueo WHERE estado='PENDIENTE' AND origen='AUTOMATICO' AND NOT simulacion ORDER BY fecha_solicitud,accion_id LIMIT $1",[limit])).rows;},
   async context(action){
    const alert=(await query('SELECT * FROM public.v_alertas WHERE alerta_id=$1',[action.alerta_id])).rows[0];
-   const rule=(await query('SELECT regla_id,activa,objetivo,prioridades::text[] AS prioridades,peligrosidades::text[] AS peligrosidades,clases_incibe,min_alertas,ventana_minutos,exigir_criticidad_cuerpo,inconsistencias_ignoradas,antiguedad_max_minutos FROM public.reglas_bloqueo_auto WHERE regla_id=$1',[action.regla])).rows[0];
+   const rule=(await query('SELECT '+(settings.policy==='sql'?'criticidades_cuerpo,criticidades_corroboradas,min_alertas_corroboracion,ventana_corroboracion_min,':'')+'regla_id,activa,objetivo,prioridades::text[] AS prioridades,peligrosidades::text[] AS peligrosidades,clases_incibe,min_alertas,ventana_minutos,exigir_criticidad_cuerpo,inconsistencias_ignoradas,antiguedad_max_minutos FROM public.reglas_bloqueo_auto WHERE regla_id=$1',[action.regla])).rows[0];
+   if(settings.policy==='sql'&&rule&&alert){
+    rule.sqlDecisionApproved=(await query("SELECT 1 FROM public.decisiones_bloqueo_auto WHERE accion_id=$1 AND alerta_id=$2 AND regla_id=$3 AND tipo_objetivo='USUARIO' AND valor_objetivo=$4 AND decision='BLOQUEAR'",[action.accion_id,action.alerta_id,action.regla,action.usuario_objetivo])).rowCount===1;
+    const body=String(alert.criticidad_cuerpo||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+    if(/^(medi|baj)/.test(body)){rule.min_alertas=Math.max(rule.min_alertas,rule.min_alertas_corroboracion);rule.ventana_minutos=rule.ventana_corroboracion_min;}
+   }
    return {alert,rule,evidence:alert?await evidenceFor(alert.correo_id):null};
   },
   async corroborations(action,context){
    const end=context.alert.fecha_ultimo_evento||context.alert.fecha_hora_evento;
    const rows=(await query("SELECT * FROM public.v_alertas WHERE lower(usuario_implicado)=lower($1) AND coalesce(fecha_ultimo_evento,fecha_hora_evento) BETWEEN $2::timestamptz - make_interval(mins=>$3::int) AND $2::timestamptz ORDER BY fecha_hora_correo DESC LIMIT 100",[action.usuario_objetivo,end,context.rule.ventana_minutos])).rows;
-   let count=0;for(const alert of rows){const evidence=await evidenceFor(alert.correo_id);if(assessUserAlert(action,alert,evidence,context.rule,settings).eligible)count++;}
+   let count=0;const ids=new Set();for(const alert of rows){const evidence=await evidenceFor(alert.correo_id);if(!ids.has(alert.id_alerta_soc)&&assessUserAlert(settings.policy==='sql'?{...action,alerta_id:alert.alerta_id}:action,alert,evidence,context.rule,settings).eligible){ids.add(alert.id_alerta_soc);count++;}}
    return count;
   },
   async protectedUser(user){return (await query("SELECT 1 FROM public.lista_blanca WHERE activo AND tipo='USUARIO' AND lower(usuario)=lower($1) LIMIT 1",[user])).rowCount>0;},
@@ -51,6 +56,7 @@ export function postgresStore(client,settings){
    try{
     await query("SELECT pg_advisory_xact_lock(hashtext('bloqueo:USUARIO:' || lower($1)))",[action.usuario_objetivo]);
     await query('LOCK TABLE public.lista_blanca,public.reglas_bloqueo_auto IN SHARE MODE');
+    if(settings.policy==='sql')await query('LOCK TABLE public.alertas,public.bandeja_entrada,public.decisiones_bloqueo_auto,public.config_autenticacion IN SHARE MODE');
     const latest=await store.context(action);
     const checked=assessUserAlert(action,latest.alert,latest.evidence,latest.rule,settings);
     if(!checked.eligible||checked.evidenceHash!==meta.evidenceHash||await store.protectedUser(action.usuario_objetivo)||await store.unresolved(action.usuario_objetivo,action.accion_id)||await store.releasedSince(action.usuario_objetivo,latest.alert.fecha_hora_evento||latest.alert.fecha_hora_correo)||await store.corroborations(action,latest)<latest.rule.min_alertas){await query('ROLLBACK');return null;}
