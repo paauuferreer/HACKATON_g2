@@ -84,3 +84,19 @@ Formato: ID · fecha/hora · decisión · motivo · quién decide · estado.
   2. Adaptar el ejecutor web a la decisión SQL (BD-010).
   3. El OK final del equipo para activar `BLOQUEO_AUTO_ACTIVO=1`.
 - **Decide:** responsable de BD, con la petición del director. Lista revisada en simulación antes de encolar. **Estado:** implementada (010), aplicada en Azure.
+
+## D-008 · 04/11/2026 · El buzón de Outlook se ordena solo, según la base de datos
+- **Petición:** que la bandeja de entrada esté organizada con carpetas y etiquetas según el correo que llegue. No aparece en los documentos del reto: llegó por otra vía y falta documentar su origen; si es una directriz, va también a `docs/directrices.md`.
+- **Decisión:**
+  - **Carpeta = qué hay que hacer** (Directrices, SOC por urgencia, Revisión manual, Cerradas, Solicitudes, Ruido, Cuarentena, No SOC).
+  - **Etiquetas de color = qué es** (gravedad, clase INCIBE, verificado/sospechoso, duplicado, inconsistente, solicitud, bloqueo).
+  - Lo decide la BD (vista `v_outlook_destino`), con la misma clasificación que el cuadro de mando. Lo aplica `soc/outlook_organizar.py` con Graph.
+- **Alternativa descartada:** reglas de Outlook que mueven correos al llegar. El flujo de Power Automate se dispara en la Bandeja de entrada y podría no ver el correo; además, esas reglas solo ven el asunto y el remitente, que se pueden falsificar.
+- **Detalle de seguridad:** `procesar_correo()` marca como sospechoso a cualquier remitente fuera de la lista de confianza. Para el buzón solo cuentan los motivos reales. Así, los avisos de la organización y de servicios van a «No SOC», no a Cuarentena.
+- **Seguridad del script:**
+  - Solo mueve correos ya guardados en la BD.
+  - Nunca interpreta su contenido.
+  - Conserva las etiquetas puestas a mano.
+  - Arranca en simulación.
+  - Necesita `Mail.ReadWrite` delegado; `MailboxSettings.ReadWrite` es opcional y solo sirve para los colores.
+- **Decide:** responsable de BD. **Estado:** implementada (migración 011) y probada en local con 14 correos. Pendiente de aplicar en Azure y de ejecutar el script.

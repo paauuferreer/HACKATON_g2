@@ -109,3 +109,31 @@ Horas en Europe/Madrid. Columnas: `total` (carga, sin duplicados), `reales` (sin
 
 > Estado: tablas creadas en Azure. Las columnas exactas de cada vista se publicarán en `db/schema.sql` en esta misma rama.
 > Hasta entonces, la web no debe depender de nombres de columna no listados aquí.
+
+## Organización del buzón de Outlook (migración 011, decisión D-008)
+**Carpeta = qué hacer con el correo** (una por correo). **Etiqueta = qué es** (varias): gravedad, clase INCIBE y señales. Lo decide la BD; `soc/outlook_organizar.py` lo aplica con Graph.
+
+| Objeto | Uso |
+|---|---|
+| `config_outlook` | Interruptor `organizacion_activa`, remitentes de directrices y del SOC |
+| `outlook_carpetas`, `outlook_categorias` | Rutas, nombres y colores editables (sin tocar código) |
+| `v_outlook_destino` | Por correo: `carpeta_ruta`, `categorias[]`, `motivo` y `huella`. La web puede mostrar «dónde está en Outlook» |
+| `v_outlook_pendientes` | Lo que falta aplicar (nuevos, con cambios, o errores a reintentar tras 10 min, máximo 6 intentos) |
+| `v_outlook_resumen` | Correos, aplicados y pendientes por carpeta |
+| `outlook_sincronizacion` + `registrar_sincronizacion_outlook()` | Auditoría de lo aplicado (id de Graph, estado, detalle) |
+
+Reglas de carpeta, por orden:
+1. Cuarentena: motivo real de sospecha, autenticidad fallida o sin cabeceras de transporte.
+2. Directrices.
+3. Cuarentena: formato de alerta SOC desde un remitente que no es el SOC.
+4. No SOC: remitente externo.
+5. SOC · Revisión manual: correo del SOC sin formato.
+6. No SOC: resto de correos malformados.
+7. Solicitudes.
+8. Ruido: duplicados, falsas alarmas e informativos.
+9. No SOC: alertas en estado NO_SOC.
+10. SOC · Cerradas.
+11. SOC · Críticas y altas: el asunto o el cuerpo dicen crítico o alto.
+12. SOC · Medias y bajas.
+
+Los correos aún sin procesar se quedan en la Bandeja de entrada.

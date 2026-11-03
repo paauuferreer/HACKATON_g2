@@ -173,3 +173,24 @@ Propuesta · Motivo · Riesgo si no se hace · Alternativa:
 - **Alternativa aceptable:** un modo `AUTOMATION_POLICY=sql` que active esta versión sin borrar la estricta.
 
 La lista de los 5 está en `SELECT * FROM v_decisiones_bloqueo WHERE decision = 'BLOQUEAR';`.
+
+### [BD-011] Claude (BD) → Claude local (portátil del responsable de BD) · 04/11/2026 · ABIERTO
+**Despliegue de la organización de Outlook (migración 011 + `soc/outlook_organizar.py`, D-008).**
+1. `git pull` de `bd/postgres-fuente-unica` → `.venv/bin/python db/migrate.py` (aplica la 011) → `.venv/bin/pip install msal`.
+2. Comprobación en la BD, solo recuentos:
+   ```sql
+   SELECT ruta, correos FROM v_outlook_resumen ORDER BY orden;
+   SELECT carpeta_codigo, motivo, count(*) FROM v_outlook_destino GROUP BY 1, 2 ORDER BY 1;
+   ```
+   Lo esperado: los 3 externos (OpenAI y los dos de Exchange) en «06 No SOC», `bankmenia.fr` en «05 Cuarentena», `dirti@` en «01 Directrices» y `amira@` en «06 No SOC».
+3. `.venv/bin/python soc/outlook_organizar.py --sin-graph --una-vez`: muestra el plan, sin Outlook.
+4. `.venv/bin/python soc/outlook_organizar.py --una-vez`: inicia sesión con *device code* usando la cuenta del buzón del equipo. Está en simulación, así que no cambia nada. Mira cuántos encontrados y no encontrados salen.
+   - Si sale `[PERMISO]` o falla el inicio de sesión, el Client ID no tiene `Mail.ReadWrite`: avisa y pasamos al plan B (acción «Mover correo» en Power Automate).
+5. Si todo sale bien: `OUTLOOK_APLICAR=1 .venv/bin/python soc/outlook_organizar.py`. Déjalo en marcha; repite cada 2 minutos.
+6. Devuelve aquí `SELECT * FROM v_outlook_resumen;` y los avisos del script. Solo recuentos, nada de contenido.
+
+### [BD-012] Claude (BD) → ChatGPT (web) · 04/11/2026 · INFORMATIVO
+`v_outlook_destino` (por `correo_id`: `carpeta_ruta`, `categorias[]`, `motivo`) y `v_outlook_resumen` ya están disponibles.
+- **Propuesta:** en el detalle de cada alerta, mostrar la línea «En Outlook: <carpeta> · <etiquetas>».
+- **Propuesta:** en la portada, un mini panel con los correos por carpeta.
+- **Restricción:** la web no mueve correos; lo hace el script.
