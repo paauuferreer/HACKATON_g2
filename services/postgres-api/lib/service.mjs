@@ -30,7 +30,7 @@ export function toIncident(row){
    warnings:[...(row.inconsistencias||[]),...(row.motivo_sospecha?[row.motivo_sospecha]:[])],attachments:[]}};
 }
 const group=(rows,label,count='total')=>rows.map(r=>({label:String(r[label]??'Sin identificar'),count:Number(r[count])}));
-export const dashboardViews=['v_alertas','v_kpis','v_stats_clase','v_stats_fuente','v_stats_prioridad_peligrosidad','v_top_equipos','v_top_usuarios','v_timeline','v_incibe_taxonomia'];
+export const dashboardViews=['v_alertas','v_kpis','v_stats_clase','v_stats_fuente','v_stats_prioridad_peligrosidad','v_stats_estado','v_top_equipos','v_top_usuarios','v_timeline','v_incibe_taxonomia'];
 export async function checkReadiness(client){
  const rows=(await client.query("SELECT table_name FROM information_schema.views WHERE table_schema='public'")).rows;
  const present=new Set(rows.map(r=>r.table_name));const missingViews=dashboardViews.filter(name=>!present.has(name));
