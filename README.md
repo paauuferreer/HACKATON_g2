@@ -63,16 +63,25 @@ Los secretos se configuran en el entorno de ejecución, no en el navegador ni Gi
 
 ## PostgreSQL
 
-Esquema: `postgres/schema.sql`. Servicio: `postgres/server.ts`.
-Copiar `postgres/.env.example` a `postgres/.env`, configurar y ejecutar:
+El contrato del equipo está en `db/schema.sql`, con las migraciones versionadas
+en `db/migrations/`. Las migraciones 001–004 ya están aplicadas en Azure.
+La ingesta activa usa GitHub Actions e inserta en `public.bandeja_entrada`;
+el trigger genera las alertas y alimenta las vistas `v_kpis`, `v_alertas` y `v_stats_*`.
+Ver [configuración y operación](postgres/SINCRONIZACION.txt).
+
+El panel de GitHub Pages sigue leyendo Sites. Esta integración conserva una copia
+de correos y originales en PostgreSQL; no cambia todavía el origen de lectura del panel.
+
+`postgres/schema.sql` y `postgres/server.ts` son el backend alternativo inicial,
+con otro esquema (`hackapol_soc`). **No ejecutar ese esquema en la integración activa.**
+Solo para desplegar expresamente ese backend alternativo:
 
 ```sh
 npm run start:postgres
 ```
 
-Ver `docs/INTEGRACION-POSTGRESQL.txt`; sus rutas `app/` corresponden a la raíz
-de este repositorio. La conexión real y la migración del almacenamiento provisional
-requieren coordinarse con el responsable de la base de datos.
+La guía del conector PostgreSQL directo de Power Automate en
+`docs/POWER-AUTOMATE-POSTGRESQL.md` es otra alternativa, no un paso pendiente.
 
 ## Alcance
 
