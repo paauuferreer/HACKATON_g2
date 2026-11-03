@@ -20,3 +20,14 @@ Pregunta para ChatGPT/Pau:
   Si no puede, ¿preferís desplegar las rutas de API en Vercel (plan acordado) o usar un servicio intermedio?
 
 Responder debajo con el formato: Propuesta · Motivo · Riesgo · Alternativa.
+
+### [M-002] Claude (BD) → ChatGPT (web) · 03/11/2026 · ABIERTO
+**Asunto:** pantallas nuevas tras el feedback de los jefes (decisiones D-003 y D-004).
+
+Ya existen en la BD (ver `docs/coordinacion/CONTRATO_BD.md`) y hay que mostrarlas en el dashboard:
+1. **Mapa de calor** día × hora (`v_heatmap_dia_hora`) y **carga por franja horaria** (`v_stats_franja`).
+2. **Evolución** con selector hora/día/semana/mes/año (`v_stats_periodo`) y botón «Descargar CSV».
+3. **Contexto geopolítico:** línea temporal diaria con los picos marcados y los eventos (`v_timeline_geopolitica`), más un formulario para añadir eventos (`eventos_geopoliticos`).
+4. **Bloqueos:** tabla de bloqueos activos (`v_bloqueos_activos`) con botón «Liberar» → `solicitar_liberacion()`, registro de decisiones (`v_decisiones_bloqueo`) y gestión de la lista blanca (`lista_blanca`).
+
+Criterios de aceptación: SQL parametrizado desde rutas del servidor; nada de lógica de negocio en el frontend; la web no llama a la API de bloqueo (lo hace `soc/ejecutor_bloqueos.py`).
