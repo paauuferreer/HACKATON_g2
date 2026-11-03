@@ -54,3 +54,33 @@ Formato: ID · fecha/hora · decisión · motivo · quién decide · estado.
   Nunca se usa el texto del correo ni `remitentes_confianza`. El bloqueo automático exige autenticidad verificada.
 - **Pendiente:** confirmar que el EML exportado por Power Automate conserva esas cabeceras (BD-007). Si falta `AuthAs`, se desactiva `exigir_authas_internal` y se anota aquí.
 - **Decide:** responsable de BD. **Estado:** implementada (migración 009) y probada en local con 8 casos. Pendiente de aplicar en Azure.
+
+## D-007 · 03/11/2026 · Bloqueo automático de usuarios en casos claros, también con las alertas ya recibidas
+- **Hechos:**
+  - Las 14 alertas críticas llegan como `[P4][CRÍTICO]`.
+  - Las plantillas del SOC dicen siempre «Pendiente de validación».
+  - El EML guardado de los correos internos no trae `Authentication-Results` (0 de 111) ni `x-ms-mail-application` (0 de 111). Sí trae `Received-SPF: Pass` de `protection.outlook.com`, `AuthAs Internal`, `AuthMechanism` y `AuthSource`.
+  - Con la 009 tal cual no se verificaba ningún correo del SOC, y con D-005 no se bloqueaba nada.
+- **Feedback del director (vía el responsable de BD):** la prioridad no es fiable, porque puede ser P4 según INCIBE, pero una alerta CRÍTICA no puede quedar como «Otros». Bloqueo automático en casos claros, empezando ya.
+- **Decisión (regla AUTO-05, migración 010; AUTO-04 desactivada):**
+  - **Se bloquea un usuario automáticamente si se cumple todo esto:**
+    - asunto CRÍTICO con cualquier Px;
+    - cuerpo Crítica o Alta. Media o Baja solo valen si hay al menos 2 alertas críticas del mismo usuario en 2 h; si no, RECOMENDAR;
+    - clase INTRUSION, CONTENIDO_DANINO o COMPROMISO_INFORMACION;
+    - remitente de confianza autenticado. En correo interno: primera `Received-SPF` pass + `AuthAs Internal` + `AuthMechanism` + `AuthSource` + un único From + SHA-256;
+    - cuenta personal `@sampol.com`.
+  - **Se mantienen los filtros de siempre:** sin petición SOL, sin sospecha, sin duplicado, fuera de la lista blanca y sin liberación humana posterior.
+  - **Ajustes:**
+    - una IP mal escrita invalida la IP, no al usuario;
+    - las cuentas de servicio o administración, las IPs y los casos sin corroborar pasan a RECOMENDAR;
+    - no hay antigüedad máxima: entran las alertas ya recibidas.
+  - Power Automate deja de exigirse (`config_autenticacion.exigir_power_automate = FALSE`) mientras el EML no conserve esa cabecera.
+- **Resultado en Azure (03/11 22:50):**
+  - 5 usuarios encolados para bloquear (`PENDIENTE`): qgomez, jmoreno, amoreno, bmoreno y dmoreno.
+  - 6 decisiones RECOMENDAR de usuario y 7 de IP.
+  - No se ha enviado ningún POST.
+- **Pendiente:**
+  1. La clave de la API da 401: hay que conseguir la nueva de la organización.
+  2. Adaptar el ejecutor web a la decisión SQL (BD-010).
+  3. El OK final del equipo para activar `BLOQUEO_AUTO_ACTIVO=1`.
+- **Decide:** responsable de BD, con la petición del director. Lista revisada en simulación antes de encolar. **Estado:** implementada (010), aplicada en Azure.
