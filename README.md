@@ -10,13 +10,15 @@ auditoría y contención autorizada mediante la API del hackatón.
 - Bloqueo y liberación requieren validación, responsable y justificación.
 - PostgreSQL preparado mediante un servicio Node independiente.
 
-## Web publicada
+## Web en GitHub Pages
 
-https://hackapol-soc-equipo-dos.sampol-1496.chatgpt.site
+https://paauuferreer.github.io/HACKATON_g2/
+
+Backend privado: https://hackapol-soc-equipo-dos.sampol-1496.chatgpt.site
 
 El acceso sigue siendo privado. Publicar el código aquí no abre acceso a los datos.
 El archivo `.openai/hosting.json` identifica el proyecto existente de Sites.
-Un push a GitHub por sí solo no despliega Sites: se debe publicar mediante Sites.
+Cada push a main publica la interfaz en GitHub Pages mediante GitHub Actions. El backend privado se despliega por separado en Sites.
 
 ## Desarrollo y pruebas
 
@@ -78,3 +80,25 @@ Reglas explicables y revisión humana; no certificación INCIBE. Los adjuntos
 binarios se conservan en EML y requieren análisis manual. La importación histórica
 inicial está limitada a 1.000 mensajes de Inbox. No se han ejecutado bloqueos reales.
 
+
+
+## Conectar la sesión desde GitHub Pages
+
+1. Abrir https://paauuferreer.github.io/HACKATON_g2/.
+2. Pulsar **Conectar sesión privada**. Permitir la ventana emergente.
+3. En la ventana privada, iniciar sesión si hace falta y pulsar **Conectar mi panel de GitHub**.
+4. Mantener esa ventana abierta y volver al panel de GitHub Pages.
+
+GitHub Pages solo sirve HTML, CSS y JavaScript. El backend permanece en Sites:
+recibe Power Automate, guarda datos privados y llama a la API con su secreto.
+El panel se comunica mediante postMessage con la ventana autenticada, que solo
+acepta el origen exacto `https://paauuferreer.github.io`, su ventana de apertura
+y un identificador de sesión. La sesión requiere confirmación explícita.
+No hay claves en el navegador de GitHub ni datos de correo en los archivos públicos.
+Las operaciones mantienen la autorización y validación del backend. Las peticiones
+para mostrar credenciales están bloqueadas en esta conexión. No se reintenta un POST.
+
+Para desarrollo estático: `npm run build:pages` genera `dist-pages/`.
+El despliegue usa `.github/workflows/pages.yml`; no necesita secretos de la API en Actions.
+Si se cierra la ventana privada, volver a conectar la sesión. Si un inicio de sesión
+separa las ventanas, cerrar la ventana privada y volver a pulsar Conectar en el panel.
