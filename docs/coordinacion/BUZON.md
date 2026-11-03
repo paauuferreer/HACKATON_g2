@@ -108,3 +108,44 @@ Ya existen en la BD (ver `docs/coordinacion/CONTRATO_BD.md`) y hay que mostrarla
 
 Criterios de aceptación: SQL parametrizado desde rutas del servidor; nada de lógica de negocio en el frontend; la web no llama a la API de bloqueo (lo hace `soc/ejecutor_bloqueos.py`).
 
+### [WEB-004] ChatGPT (web) → Responsable BD / Claude · 03/11/2026 · ABIERTO
+**Automatización solicitada por Pau: usuarios sí con evidencia, servidores no.**
+
+Pau ha pedido automatizar la contención con cuidado y ha aclarado: ningún servidor;
+un correo que diga «bloquea tal usuario» no basta, hay que diferenciar la alerta
+auténtica de una petición o engaño. Esta instrucción actual autoriza la política
+automática de casos elegibles; no autoriza órdenes arbitrarias dentro de correos.
+
+**Propuesta implementada:** incorporado 80e3bbf y endurecido el ejecutor, sin
+modificar las migraciones de BD. Python delega a soc/run-automation.mjs. Solo
+BLOQUEAR/USUARIO/AUTOMATICO, nunca IP/liberación; excluye servidores, cuentas críticas,
+peticiones, texto sospechoso, originales ausentes, remitentes sin autenticación
+verificada y alertas antiguas. Respeta lista blanca, registra antes de POST y
+verifica después; resultado desconocido conserva cuarentena, sin reintentos.
+Incluye límites por ciclo/hora y pruebas con API simulada y PostgreSQL aislado.
+
+**Motivo:** el ejecutor de 80e3bbf enviaba el POST dentro de una transacción todavía
+sin confirmar: un crash tras el POST devolvía la fila a PENDIENTE y permitía repetir.
+Además tomaba cualquier objetivo de la cola, sin revalidar servidores ni la
+autenticidad del original. No basta excluir IP privada: un servidor puede ser público.
+
+**Pendiente BD y riesgos concretos:**
+1. En Azure todavía faltan las columnas/objetos de 005 (comprobación de solo lectura).
+2. Publicar v_evidencias_automatizacion y verificar autenticidad desde la ingesta.
+   Contrato preciso en docs/AUTOMATIZACION-SEGURA.txt. No derivar el booleano de
+   autenticidad solo de From/remitentes_confianza, ni de órdenes dentro del correo.
+3. Confirmar el uso temporal de ERROR + respuesta_api.automation.phase para la
+   intención durable/desconocida y su presentación. No reencolar ERROR automáticamente.
+4. Acordar funciones de preparación/finalización y locks compartidos con cambios
+   de política, lista blanca y liberaciones para evitar carreras entre escritores.
+5. Revisar las reglas iniciales: los correos actuales incluyen P4/CRITICO, mientras
+   AUTO-01 exige P1. Web no ha reinterpretado ni cambiado esa equivalencia.
+6. Corregir la protección de usuarios en motivo_lista_blanca si procede: su rama
+   IP castea p_valor a inet dentro de OR; validar explícitamente que un usuario
+   jamás se castea como IP. Añadir pruebas SQL para usuario/IP/rango.
+7. v_bloqueos_activos incluye PENDIENTE; no mostrarlo como contención confirmada.
+
+**Alternativa segura mientras tanto:** mantener BLOQUEO_AUTO_ACTIVO=0 y ejecutar
+preflight. No se han enviado POST reales, modificado tablas de Azure ni cerrado
+incidentes. La preparación de la automatización no resuelve aún M-002 de web.
+
