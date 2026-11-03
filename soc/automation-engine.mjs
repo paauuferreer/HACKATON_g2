@@ -57,13 +57,14 @@ export async function runCycle({store,api,settings,dryRun=true,now}){
  const readiness=await store.readiness();
  if(!readiness.ready)return {ready:false,missing:readiness.missing,executed:0};
  if(!await store.lock())return {ready:true,busy:true,executed:0};
- const counts={ready:true,dryRun,examined:0,eligible:0,verified:0,review:0,unknown:0,already_blocked:0};
+ const counts={ready:true,dryRun,examined:0,eligible:0,verified:0,review:0,unknown:0,already_blocked:0,reasons:{}};
  try{
   const actions=await store.pending(100);
   let attempts=0;
   for(const action of actions){
    if(!dryRun&&attempts>=settings.maxPerRun)break;
    const result=await processAction(action,{store,api,settings,dryRun,now});counts.examined++;
+   if(result.code)counts.reasons[result.code]=(counts.reasons[result.code]||0)+1;
    if(result.outcome in counts)counts[result.outcome]++;
    if(['verified','unknown'].includes(result.outcome))attempts++;
    if(result.outcome==='unknown'||result.outcome==='limited')break; // Circuit breaker.

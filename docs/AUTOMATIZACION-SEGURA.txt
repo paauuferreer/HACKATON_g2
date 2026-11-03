@@ -1,3 +1,48 @@
+ESTADO VIGENTE - 04/11/2026
+
+El ejecutor admite AUTOMATION_POLICY=sql y las migraciones 001-010 del compañero.
+La decisión SQL debe estar vinculada a la acción, alerta, regla y usuario exactos.
+El ejecutor revalida original EML, SHA-256, autenticidad, remitente, usuario,
+cuentas protegidas, servidores, instrucciones sospechosas, lista blanca,
+corroboración, liberaciones posteriores y resultados inciertos.
+
+La política SQL conserva los criterios de la BD sobre antigüedad y la plantilla
+estándar del SOC. Conserva la política strict como opción independiente.
+No ejecuta bloqueos de IP ni liberaciones automáticas.
+Límites de producción: 3 intentos por ciclo y 10 por hora.
+Reserva durable antes del POST y GET independiente antes de darlo por confirmado.
+No repite POST de resultado incierto.
+
+CAMBIO DE CLAVE
+En GitHub: Settings > Secrets and variables > Actions > Repository secrets >
+BLOCK_API_KEY > Update. Usar la clave oficial del equipo 2, sin comillas.
+No subirla al repositorio ni ponerla en variables de GitHub Pages.
+El destino sigue fijado a la API oficial del equipo 2; un correo no puede cambiarlo.
+Si cambia también la URL o el contrato, será necesario revisar el adaptador.
+
+GitHub Actions: Sincronizar correos con PostgreSQL, frecuencia solicitada */5.
+GitHub puede retrasar los cron; no se garantiza un intervalo de cinco minutos.
+BLOQUEO_AUTO_ACTIVO=1 permite ejecutar cuando la clave es válida; 0 desactiva.
+Clave ausente o 401/403: waitingForCredential=true, executed=0; no consume cola.
+Los problemas de red, contrato o base de datos siguen deteniendo la ejecución.
+Run workflow ofrece dry_run=true por defecto para revisión sin bloqueos.
+
+PRUEBAS
+88 pruebas de política/motor y 2 de arranque pasan localmente.
+CI prueba transacciones en PostgreSQL aislado y migraciones 001-010, incluyendo
+SPF interno, sellos Exchange, DMARC, manipulación del original y duplicación From.
+Prueba de lectura sobre Azure: 5 pendientes; 1 elegible; 3 protegidas por servidor
+ o cuenta crítica; 1 sin corroboración suficiente. Cero POST enviados.
+
+ALCANCE
+Esta configuración prepara la automatización en GitHub Actions. Los botones
+manuales de la web alojada en Sites usan su propio secreto BLOCK_API_KEY; si se
+quieren usar, actualizar también ese secreto con la misma clave oficial.
+El cambio de fuente del panel desde Sites a PostgreSQL sigue siendo un proyecto
+separado; no se declara completado mediante esta preparación de los bloqueos.
+
+Esta sección sustituye los estados históricos de preparación que figuran debajo.
+
 AUTOMATIZACIÓN DE CONTENCIÓN — EQUIPO 2
 Estado actual (03/11/2026 22:40 CET): preparada en web/postgres-api; NO ACTIVADA.
 La clave real del equipo 2 devuelve HTTP 401. No se ha sustituido por una API

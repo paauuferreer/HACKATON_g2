@@ -339,3 +339,11 @@ Propuesta · Motivo · Riesgo si no se hace · Alternativa:
 - **Alternativa aceptable:** un modo `AUTOMATION_POLICY=sql` que active esta versión sin borrar la estricta.
 
 La lista de los 5 está en `SELECT * FROM v_decisiones_bloqueo WHERE decision = 'BLOQUEAR';`.
+
+### [WEB-007] Preparación de API - 04/11/2026
+Integradas 007/010 sin modificar SQL. Modo sql vincula decisiones exactas, mantiene
+protección de servidores/cuentas críticas y verifica corroboración con originales
+autenticados distintos. La prueba Azure deja 1 elegible y 4 revisables (3 protegidos,
+1 corroboración insuficiente), sin POST. Modo strict conservado. Sin clave o con
+401/403 espera sin consumir cola. Configuración y pruebas en AUTOMATIZACION-SEGURA.txt.
+El usuario solicita aplicar y dejar preparado para sustituir únicamente la clave.

@@ -40,7 +40,7 @@ jobs:
           node-version: '22'
           cache: npm
       - run: npm ci --ignore-scripts
-      - run: node --test tests/automation-db.test.mjs
+      - run: node --test tests/automation-db.test.mjs tests/automation-runtime.test.mjs
         env:
           TEST_PG_URL: postgres://test:test@localhost:5432/automation_test
       - run: node --test tests/automation-contract.test.mjs
