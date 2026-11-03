@@ -1,0 +1,40 @@
+SINCRONIZACIÓN EN LA NUBE — EQUIPO 2
+
+Outlook → Power Automate → almacenamiento privado de Sites → GitHub Actions → PostgreSQL.
+La ficha técnica proporciona conexión directa PostgreSQL, no una API REST.
+
+Workflow: https://github.com/paauuferreer/HACKATON_g2/actions/workflows/postgres-sync.yml
+Se programa cada 5 minutos; GitHub puede retrasar ejecuciones. También se puede ejecutar con Run workflow.
+El ordenador puede apagarse. La recepción depende del flujo Outlook activo.
+
+Se inserta en public.bandeja_entrada, respetando el esquema existente del compañero.
+El trigger existente procesar_correo genera las alertas o los registros para revisión.
+No ejecutar postgres/schema.sql para esta integración: corresponde al backend alternativo.
+La aplicación web sigue consultando Sites; esta integración guarda una copia en PostgreSQL.
+Las revisiones y operaciones de bloqueo de la web no se sincronizan con PostgreSQL en este proceso.
+Esta sincronización no ejecuta bloqueos ni cambia las reglas de autorización.
+
+Datos guardados: remitente, destinatarios, asunto, cuerpo MIME, fecha de recepción,
+cabeceras, metadatos de adjuntos y correo completo con sus adjuntos en eml_raw.
+cabeceras.eml_sha256 permite verificar los bytes originales.
+Normalmente eml_raw es UTF-8; si no puede conservar los bytes sin pérdidas, es base64,
+identificado por cabeceras.eml_encoding. No asumir siempre texto al exportarlo.
+El campo asunto está limitado a 500 caracteres por el esquema; el asunto completo
+se conserva en cabeceras.original_subject y en el EML.
+correo_id conserva el UUID de Sites. La inserción no actualiza ni borra entradas;
+la clave primaria y el identificador del mensaje evitan repetirlas en reintentos.
+Los correos diferentes considerados duplicados por contenido quedan preservados
+y se clasifican mediante las reglas SQL existentes.
+
+Secretos del repositorio: PGHOST, PGPORT, PGDATABASE, PGUSER, PGPASSWORD,
+SOC_SOURCE_BEARER y SOC_SYNC_TOKEN. No incluir sus valores en archivos o commits.
+SOC_SYNC_TOKEN también está configurado como secreto del servidor Sites.
+Conexión PostgreSQL cifrada y certificado verificado. Los logs solo muestran contadores
+y códigos de error; no se suben originales como artifacts de GitHub.
+Si cambia el acceso de Sites o se revoca su credencial de servicio, actualizar
+SOC_SOURCE_BEARER. Mantener privado el backend.
+
+Ante un fallo: consultar la ejecución del workflow, corregir la conexión/configuración
+y repetir Run workflow. Los correos pendientes se reintentan sin borrar los ya guardados.
+El programador de GitHub puede desactivar workflows de repositorios públicos inactivos;
+comprobar periódicamente que sigue habilitado y que las ejecuciones terminan correctamente.

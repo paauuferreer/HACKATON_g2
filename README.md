@@ -8,7 +8,7 @@ auditoría y contención autorizada mediante la API del hackatón.
 - Los correos y originales EML se guardan en almacenamiento privado, no en Git.
 - Duplicados relacionados y excluidos de las estadísticas.
 - Bloqueo y liberación requieren validación, responsable y justificación.
-- PostgreSQL preparado mediante un servicio Node independiente.
+- Copia de correos y originales a PostgreSQL mediante GitHub Actions cada 5 minutos aproximadamente; consulta [la integración](postgres/SINCRONIZACION.txt). La web continúa leyendo Sites.
 
 ## Web en GitHub Pages
 
