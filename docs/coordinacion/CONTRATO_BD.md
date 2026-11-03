@@ -48,6 +48,21 @@ Flujo: alerta crítica → `trigger_bloqueo_auto` → `evaluar_bloqueo_auto()` �
 
 Bloqueo manual desde la web: `INSERT INTO acciones_bloqueo (accion, ip_objetivo | usuario_objetivo, motivo, solicitado_por, estado, origen) VALUES ('BLOQUEAR', …, 'PENDIENTE', 'MANUAL')`. Una fila = un solo objetivo. La web **nunca** llama a la API directamente: lo hace el ejecutor.
 
+## Ajustes del bloqueo y contrato del ejecutor (migración 008, decisión D-005)
+- **Decisiones posibles:** `BLOQUEAR`, `YA_BLOQUEADO`, `RECOMENDAR` (cumple todo, pero es una IP o la alerta tiene más de 15 min: decide una persona) y `DESCARTAR`.
+- **Estados de `acciones_bloqueo`:** `PENDIENTE` → `EN_CURSO` (intención guardada antes del POST) → `EJECUTADA` | `ERROR` (fallo conocido) | `DESCONOCIDO` (cuarentena). También `OMITIDA` (no se envió).
+- **Ejecutor:** `reservar_accion_bloqueo(accion_id) → token` y COMMIT; luego el POST; luego `cerrar_accion_bloqueo(accion_id, token, resultado, http, respuesta)` y COMMIT. Si cae entre medias, queda `EN_CURSO` y nunca se repite el POST. Las dudas las resuelve una persona con `reconciliar_accion_bloqueo(accion_id, 'EJECUTADA'|'ERROR', responsable, motivo)`.
+- **Compatibilidad:** `ERROR` + `respuesta_api.automation.phase` = `outcome_unknown`/`acknowledged` cuenta como cuarentena (`es_cuarentena()`).
+
+| Vista | Uso |
+|---|---|
+| `v_bloqueos_activos` | Añade `confirmado` (la API lo aceptó y no hay liberación posterior), `en_cuarentena` y `fase_automatizacion`. **Solo `confirmado` significa bloqueado.** |
+| `v_recomendaciones_bloqueo` | Objetivos recomendados aún no bloqueados: botón «Bloquear» manual |
+| `v_bloqueos_revision` | Operaciones `ERROR`, `DESCONOCIDO`, `EN_CURSO` y `OMITIDA` que necesitan a una persona |
+| `v_evidencias_automatizacion` | Una fila por `correo_id` con el EML y las cabeceras. `autenticacion_verificada` vale **FALSE** hasta implementar la verificación con cabeceras del servidor de correo |
+
+Columnas nuevas de `reglas_bloqueo_auto`: `antiguedad_max_minutos` (15), `exigir_criticidad_cuerpo`, `inconsistencias_ignoradas` (patrones LIKE) e `ip_automatica` (FALSE).
+
 ## Analítica temporal (migración 006, decisión D-004)
 Horas en Europe/Madrid. Columnas: `total` (carga, sin duplicados), `reales` (sin falsas alarmas ni no-SOC), `criticas`, `p1`.
 

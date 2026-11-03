@@ -27,3 +27,15 @@ Formato: ID · fecha/hora · decisión · motivo · quién decide · estado.
 - **Pendiente:** el coste por hora de cada franja y los minutos por alerta los facilitará Administración. Hasta entonces, `coste_manual_eur` queda vacío.
 - **Datos simulados:** permitidos para enseñar las vistas mensual y anual, siempre etiquetados como simulados.
 - **Decide:** equipo, tras el feedback de los jefes. **Estado:** implementada (migración 006), pendiente de aplicar en Azure.
+
+## D-005 · 03/11/2026 · Bloqueo automático alineado con el ejecutor seguro (WEB-004)
+- **Decisión:** se adopta el ejecutor seguro de web (`soc/run-automation.mjs`), con estos criterios:
+  - **Usuarios sí; IPs nunca de forma automática**, porque pueden ser servidores públicos. Las IPs quedan como `RECOMENDAR`, a un clic.
+  - **Solo alertas recientes** (15 min). Las antiguas generan recomendaciones, nunca bloqueos.
+  - **Regla AUTO-04 de doble confirmación** para el formato real `[P4][CRÍTICO]`: asunto y cuerpo deben ser críticos.
+- **Motivo:** une la petición del responsable de BD (bloquear usuarios y también IPs, con filtros) y la de Pau (no bloquear servidores). Además corrige el fallo del primer ejecutor: hacía el POST dentro de una transacción sin confirmar.
+- **Pendiente:**
+  1. Confirmar con el director qué significa P4 en su SOC.
+  2. Verificar la autenticidad del remitente con las cabeceras reales.
+  3. Decidir la fecha de activación (`AUTOMATION_START_AT`).
+- **Decide:** responsable de BD, que delegó en Claude («haz lo que consideres mejor»), junto con la petición de Pau recogida en WEB-004. **Estado:** implementada (migración 008), pendiente de aplicar en Azure después de la 007.
