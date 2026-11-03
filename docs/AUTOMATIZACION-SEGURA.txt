@@ -1,5 +1,30 @@
 AUTOMATIZACIÓN DE CONTENCIÓN — EQUIPO 2
-Estado: implementada en rama web/postgres-api; pendiente de contrato BD y activación.
+Estado actual (03/11/2026 22:40 CET): preparada en web/postgres-api; NO ACTIVADA.
+La clave real del equipo 2 devuelve HTTP 401. No se ha sustituido por una API
+simulada: el usuario requiere bloqueos reales y no dispone de acceso alternativo.
+Se necesita restablecer una credencial autorizada de la organización.
+
+COMPROBACIÓN MÁS RECIENTE
+- Integradas las migraciones 008/009 del responsable BD, sin modificar su SQL.
+- Aplicadas ambas en Azure en una transacción con los locks de sincronización
+  y automatización. La 007 sigue sin estar publicada; 008 permite aplicarse antes.
+- 150 correos guardados, 143 alertas y 7 mensajes para revisión tras sincronizar.
+- Contrato completo; dry-run correcto, cola vacía, cero bloqueos enviados.
+- Autenticidad SQL: 146 originales sin Authentication-Results y 4 remitentes
+  externos. Ninguno verifica con la política actual. No se han relajado controles.
+- 53 pruebas unitarias correctas. CI 41723348211: 6 escenarios de transacciones
+  y 3 de autenticidad/migraciones correctos en PostgreSQL aislado.
+- P4/CRÍTICO admite únicamente la excepción de prioridad expresamente prevista
+  por AUTO-04 y criticidad crítica también en el original. El resto de
+  inconsistencias continúa requiriendo revisión. Se reconocen los nuevos estados
+  EN_CURSO/DESCONOCIDO y se revalida la política dentro de la reserva durable.
+- Antes de consumir la cola activa, el ejecutor comprueba el acceso a la API.
+  401/403 producen BLOCK_API_AUTH_FAILED incluso si no hay acciones pendientes.
+- API pública consultada: mismas rutas equipo-2 y cabecera X-API-Key.
+  Outlook: no se encontró una clave posterior en los mensajes del director.
+
+Las secciones siguientes conservan el diseño y las comprobaciones anteriores;
+esta actualización prevalece para el estado de despliegue y sus dependencias.
 
 PETICIÓN DEL USUARIO (03/11/2026)
 Automatizar al máximo los casos claros. No bloquear servidores. Un correo que pida

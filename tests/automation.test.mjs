@@ -132,3 +132,7 @@ test('API usa destino fijo, solo usuario y sin redirecciones',async()=>{
 test('valida límites y deja la automatización apagada por defecto',()=>{
  assert.equal(runtimeSettings().enabled,false);assert.throws(()=>runtimeSettings({AUTOMATION_MAX_PER_HOUR:'1000'}));assert.throws(()=>runtimeSettings({AUTOMATION_MAX_PER_RUN:'0'}));
 });
+test('clave rechazada detiene la activación incluso antes de consumir la cola',async()=>{
+ const api=blockingApi('test',async(url,options)=>{assert.equal(options.method,'GET');return {status:401,text:async()=>'{"detail":"Unauthorized"}'};});
+ await assert.rejects(()=>api.check(),e=>e.safeCode==='BLOCK_API_AUTH_FAILED');
+});

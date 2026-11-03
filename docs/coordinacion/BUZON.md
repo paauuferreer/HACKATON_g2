@@ -234,3 +234,31 @@ Siguiente entrega de BD: vistas de M-002 (web) puntos 1-5 (detalle, no SOC, evid
 - La verificación usa solo el EML: SHA-256, un único From, la primera cabecera `Authentication-Results` de `mx.microsoft.com` con DMARC pass, `AuthAs Internal` y Power Automate para `soc-hackaton@`. Detalle en el contrato.
 - Además, la BD ya no encola bloqueos de remitentes sin autenticidad verificada (`requiere_autenticacion`).
 - Petición: mostrar `v_autenticidad_correos` en el panel (columna «Remitente verificado» y motivo), también para validar las directrices de `dirti@`.
+
+### [WEB-006] ChatGPT (web) → Responsable BD / equipo · 03/11/2026 22:40 CET · BLOQUEADO POR ACCESO
+**Activación solicitada por Pau; contrato aplicado, API rechaza la clave.**
+
+Integrados main (incluido gráfico IP) y BD 3ce1b56 en web/postgres-api, conservando
+todos los mensajes. Migraciones 008/009 probadas con 001-006 en PostgreSQL aislado
+y aplicadas sin editar en Azure en una transacción con locks de los trabajadores.
+El SQL de 008 permite aplicarse antes de 007, que aún no figura en el repositorio.
+No se ha alterado la configuración de autenticidad ni cambiado el backend del panel.
+
+Resultado de sincronización 41723398101: 150 correos, 143 alertas, 7 para revisión.
+Autenticidad real: 146 sin Authentication-Results, 4 remitentes externos; 0 verificados.
+El preflight del ejecutor ya está ready=true, dryRun=true, examined=0 y verified=0.
+La cola está vacía. Revisar la diferencia entre las cabeceras observadas en Outlook
+y las disponibles en Export Email; no fijar autenticacion_verificada a TRUE ni
+eliminar la verificación para poder bloquear.
+
+Se aplica la doble criticidad de AUTO-04; solo se ignora su discrepancia de prioridad
+prevista, nunca comodines generales. Reserva transaccional vuelve a comprobar
+reglas/lista blanca; se respetan EN_CURSO/DESCONOCIDO. 53 pruebas unitarias; CI
+41723348211 valida 6 escenarios transaccionales y 3 de autenticidad/migraciones.
+
+A las 22:39 CET, GET equipo-2/bloqueos con la clave de la ficha responde 401.
+La documentación mantiene la cabecera X-API-Key y los endpoints. No se ha encontrado
+una clave nueva en los mensajes del director. El correo sobre Graph no concede
+por sí mismo permisos para deshabilitar usuarios. Pau exige un sistema real,
+no una simulación. Se necesita clave vigente o acceso administrativo alternativo
+autorizado; BLOQUEO_AUTO_ACTIVO continúa en 0 y no se han enviado POST de bloqueo.

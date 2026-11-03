@@ -9,6 +9,12 @@ export function blockingApi(key,fetcher=fetch){
   return {status:r.status,data:JSON.parse(text)};
  }
  return {
+  async check(){
+   const r=await request('bloqueos?tipo=usuario&limit=1&offset=0');
+   if([401,403].includes(r.status))throw Object.assign(new Error('La API rechaza la credencial del equipo 2.'),{safeCode:'BLOCK_API_AUTH_FAILED'});
+   if(r.status!==200||!Array.isArray(r.data)||r.data.some(x=>x.equipo_id!==2||x.tipo!=='usuario'))throw Object.assign(new Error('No se pudo validar la API del equipo 2.'),{safeCode:'BLOCK_API_UNAVAILABLE'});
+   return true;
+  },
   async find(user){
    for(let offset=0;offset<10000;offset+=100){
     const r=await request(`bloqueos?tipo=usuario&limit=100&offset=${offset}`);
