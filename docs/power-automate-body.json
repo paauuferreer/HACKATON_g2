@@ -1,0 +1,8 @@
+{
+  "messageId": "@{coalesce(triggerOutputs()?['body/internetMessageId'],triggerOutputs()?['body/id'])}",
+  "sender": "@{triggerOutputs()?['body/from']}",
+  "subject": "@{triggerOutputs()?['body/subject']}",
+  "receivedAt": "@{triggerOutputs()?['body/receivedDateTime']}",
+  "body": "@{triggerOutputs()?['body/body']}",
+  "emlBase64": "@{base64(body('Exportar_correo_electrónico_(V2)'))}"
+}

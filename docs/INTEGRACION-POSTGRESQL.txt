@@ -1,0 +1,79 @@
+PARA EL RESPONSABLE DE POSTGRESQL — HACKAPOL EQUIPO 2
+
+La integración está implementada, pero no se ha conectado a vuestro servidor:
+no se han facilitado host, base, usuario ni certificados. No se ha tocado una
+base de datos de vuestro compañero.
+
+QUÉ ENTREGAMOS
+app/postgres/server.ts: servicio HTTP Node.js para PostgreSQL.
+app/postgres/adapter.mjs: consultas parametrizadas y transacciones.
+app/postgres/schema.sql: esquema de referencia aislado hackapol_soc.
+app/postgres/.env.example: variables sin secretos.
+app/lib/soc-service.ts: lectura, revisión y auditoría compartidas con la web.
+app/lib/ingest-mail.ts: recepción, original EML, clasificación y duplicados.
+
+ARRANQUE
+1. Revisar schema.sql con vuestro modelo. No aplicarlo sin verificar tablas y permisos.
+   Si ya tenéis tablas propias, mapear el contrato en el servicio; no duplicar vuestra BD.
+2. Aplicar schema.sql a una base de prueba con un rol de migraciones. No contiene DROP.
+3. Copiar postgres/.env.example a postgres/.env (excluido de Git).
+4. Configurar DATABASE_URL con SSL validado, credenciales y base del compañero.
+   Definir SOC_BACKEND_TOKEN con al menos 32 caracteres aleatorios. Mantenerlo secreto.
+   Ajustar buzón, remitentes y responsables. BLOCK_API_KEY sigue pendiente.
+5. Desde app: npm ci; npm run start:postgres.
+   El servicio escucha solo en 127.0.0.1:8080 por defecto.
+6. Publicarlo tras un proxy HTTPS válido. Mantener PostgreSQL restringido al backend.
+   Persistir EVIDENCE_DIR en disco/volumen privado y configurar copias de seguridad.
+7. En el entorno privado Sites, configurar:
+   SOC_BACKEND_URL=https://<vuestro-backend>
+   SOC_BACKEND_TOKEN=<el mismo secreto, marcado secreto>
+   Desplegar una versión para aplicar variables.
+
+El navegador y Power Automate siguen usando la misma URL de la web. Sites verifica
+su acceso y reenvía al backend. El frontend nunca recibe DATABASE_URL ni el token
+PostgreSQL. Si falla el backend externo, la web muestra el error: no escribe en una
+segunda base de datos silenciosamente.
+
+CONTRATO HTTP (solo servidor a servidor)
+Authorization: Bearer <SOC_BACKEND_TOKEN>
+X-SOC-Actor: correo del usuario autenticado; lo establece Sites, nunca el navegador.
+GET /soc?q=texto&offset=0 -> config,user,incidents,total,hasMore,stats,operations,audit
+  Páginas de 200. q busca asunto, cuerpo, remitente y análisis en todo el histórico.
+GET /soc?view=evidence&id=<uuid> -> original EML + cabecera X-Evidence-SHA256.
+GET /soc?view=history&id=<uuid> -> historial completo de esa alerta.
+POST /soc -> action review/reconcile/bloquear/liberar; revisión requiere revision
+  (control de edición concurrente), incibeClass, priority, status, reason,
+  incidentId y duplicateOf (null o ID del original).
+POST /ingest -> messageId,sender,subject,receivedAt,body,emlBase64.
+  201 nueva entrada; 200 reintento del mismo mensaje; 400 entrada inválida;
+  413 demasiado grande; 500 error de almacenamiento.
+  El token de Sites no se utiliza directamente en este servicio.
+
+DATOS
+incidents: un registro por correo recibido, incluso duplicados de alertas.
+source_key: buzón + InternetMessageId (fallback ID Outlook), evita repetir la misma entrega.
+group_key: ID AL, referencia SOC o huella del cuerpo, en ese orden.
+duplicate_of: relación con el original; cada duplicado conserva su EML.
+alert_groups: resuelve la asignación concurrente del original.
+analysis: JSON serializado (TEXT compatible); puede normalizarse en JSONB mediante
+  adaptación del repositorio. Incluye clase INCIBE, explicación, candidatos, regla,
+  fuente, equipos, usuarios, fecha UTC y valor original con zona horaria,
+  gravedad fuente, adjuntos y revisión humana.
+revision: edición optimista; ante conflicto devuelve 409 y hay que recargar.
+audit: quién, cuándo, antes/después, motivo y resultado.
+operations/target_locks: intención de contención y protección frente a reintentos.
+
+MIGRAR DEL PROVISIONAL AL POSTGRESQL
+El almacenamiento Sites actual es provisional. No se migra automáticamente.
+La vía sencilla para el reto es ejecutar otra vez el flujo de histórico después
+ de conectar PostgreSQL: las claves de origen evitan duplicados en la nueva BD.
+Esto reconstruye correos, no traslada revisiones/operaciones anteriores. Antes del
+cambio, exportar auditoría y acordar una migración de esos registros si ya existen.
+Conservar los EML y sus hashes. No borrar el provisional hasta verificar conteos,
+originales, vínculos y auditoría en PostgreSQL.
+
+PRUEBAS
+14 pruebas superadas, incluyendo recepción EML, deduplicación, corrección con
+historial, control de versiones, evidencia, estadísticas y rollback del adaptador.
+Integración funcional probada con SQLite en memoria. El adaptador PostgreSQL se ha
+probado con dobles de conexión; falta la prueba real contra el servidor del compañero.

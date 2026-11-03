@@ -1,0 +1,24 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {DatabaseSync} from 'node:sqlite';import fs from 'node:fs';
+import {configureRuntime} from '../lib/runtime.mjs';import {ingestRequest} from '../lib/ingest-mail';import {readSoc,reviewIncident} from '../lib/soc-service';import {performAction} from '../lib/backend';import {postgresSQL,createDatabase} from '../postgres/adapter.mjs';
+test('integración: EML, duplicados relacionados, revisión, estadísticas y auditoría',async()=>{
+ const sqlite=new DatabaseSync(':memory:');for(const f of fs.readdirSync('drizzle').filter(x=>x.endsWith('.sql')).sort())sqlite.exec(fs.readFileSync('drizzle/'+f,'utf8'));
+ const prepare=(sql:string,params:any[]=[])=>({bind(...v:any[]){return prepare(sql,v);},async first(){return sqlite.prepare(sql).get(...params)||null;},async all(){return {results:sqlite.prepare(sql).all(...params)};},async run(){return {meta:{changes:Number(sqlite.prepare(sql).run(...params).changes)}};}});
+ const database={prepare,async batch(statements:any[]){sqlite.exec('BEGIN');try{const rows=[];for(const s of statements)rows.push(await s.run());sqlite.exec('COMMIT');return rows;}catch(e){sqlite.exec('ROLLBACK');throw e;}}};
+ const evidence=new Map();const bucket={async put(k:any,v:any){evidence.set(k,v);},async head(k:any){return evidence.has(k);},async get(k:any){return evidence.has(k)?{body:evidence.get(k)}:null;},async delete(k:any){evidence.delete(k);}};
+ configureRuntime({DB:database,BUCKET:bucket,INGEST_MODE:'power-automate',OUTLOOK_MAILBOX:'equipo@example.invalid',SOC_SENDERS:'soc@example.invalid',APPROVER_EMAILS:'analista@example.invalid'});
+ const body='SOC-20261103-002-TEST01 AL-20261030-0098. La cuenta privilegiada user@example.invalid completó una sesión desde 192.0.2.1. Fuente Microsoft Sentinel. Recurso pc-madrid-098. Evento 2026-11-03T12:00:00+01:00.';
+ const mail={sender:'soc@example.invalid',subject:'[SOC][CRÍTICO] Uso confirmado de cuenta',receivedAt:'2026-11-03T12:00:00+01:00',body,messageId:'id-1',emlBase64:Buffer.from('From: soc@example.invalid\r\nSubject: [SOC] Uso confirmado\r\nContent-Type: text/plain; charset=utf-8\r\n\r\n'+body).toString('base64')};
+ const ingest=(value:any)=>ingestRequest(new Request('https://local/ingest',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(value)}));
+ const first=await ingest(mail);assert.equal(first.status,201);const firstData:any=await first.json();
+ assert.equal((await ingest(mail)).status,200);assert.equal((await ingest({...mail,messageId:'id-2'})).status,201);
+ const page:any=await (await readSoc(new Request('https://local/soc'),'analista@example.invalid')).json();assert.equal(page.incidents.length,2);assert.equal(page.stats.duplicates,1);assert.equal(page.stats.uniqueAlerts,1);assert.equal(evidence.size,2);assert.equal(page.incidents[0].analysis.incibeClass,'Intrusión');
+ await assert.rejects(()=>performAction('analista@example.invalid',{incidentId:firstData.id,type:'ip',value:'192.0.2.1',action:'bloquear',validated:true,reason:'Autorización de prueba'}),/Revisa y confirma/);
+ const review={incidentId:firstData.id,revision:0,incibeClass:'Intrusión',priority:'Alta',status:'En revisión',reason:'Confirmado tras revisión de la evidencia.',duplicateOf:null};
+ await assert.rejects(()=>reviewIncident('intruso@example.invalid',review),/responsable/);await reviewIncident('analista@example.invalid',review);await assert.rejects(()=>reviewIncident('analista@example.invalid',review),/modificado/);
+ const after:any=await (await readSoc(new Request('https://local/soc'),'analista@example.invalid')).json();assert.ok(after.audit.some((r:any)=>r.event==='alerta_revisada'));assert.equal(after.incidents.find((r:any)=>r.id===firstData.id).revision,1);
+ const ev=await readSoc(new Request('https://local/soc?view=evidence&id='+firstData.id),'analista@example.invalid');assert.equal(ev.status,200);assert.match(await ev.text(),/AL-20261030/);
+ assert.equal((await ingest({...mail,messageId:'other',sender:'director@example.invalid',subject:'Nueva directriz',body:'Revisar el histórico',emlBase64:Buffer.from('From: director@example.invalid\r\nSubject: Nueva directriz\r\n\r\nRevisar el histórico').toString('base64')})).status,201);
+ sqlite.close();
+});
+test('adaptador PostgreSQL parametriza sin interpolar los valores',()=>{assert.equal(postgresSQL("INSERT OR IGNORE INTO audit (id,event) VALUES (?, '?')"),"INSERT INTO audit (id,event) VALUES ($1, '?') ON CONFLICT DO NOTHING");});
+test('transacción PostgreSQL revierte y libera la conexión al fallar',async()=>{const calls:string[]=[];const client={async query(sql:string){calls.push(sql);if(sql==='bad')throw Error('test');return {rows:[],rowCount:0};},release(){calls.push('release');}};const db=createDatabase({connect:async()=>client});await assert.rejects(()=>db.batch([db.prepare('bad')]));assert.deepEqual(calls,['BEGIN ISOLATION LEVEL SERIALIZABLE','bad','ROLLBACK','release']);});

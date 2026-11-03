@@ -1,0 +1,27 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "6",
+      "when": 1793706274886,
+      "tag": "0000_quiet_jubilee",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1793708775688,
+      "tag": "0001_workable_saracen",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1793708880626,
+      "tag": "0002_sweet_thaddeus_ross",
+      "breakpoints": true
+    }
+  ]
+}

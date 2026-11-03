@@ -1,0 +1,48 @@
+ADECUACIÓN AL ENUNCIADO DEL RETO
+
+Referencia: Enunciado_Reto_SOC_Participantes.pdf, aportado por el equipo.
+El objetivo inicial se mantiene: recepción + base de datos + clasificación + cuadro
+ de mando. Los bloqueos son una ampliación, no sustituyen las piezas principales.
+
+IMPLEMENTADO EN EL CÓDIGO
+- Diez clases principales de INCIBE del enunciado, categoría principal y explicación.
+  No se declara certificación. Los subtipos oficiales y escalas de impacto/peligrosidad
+  quedan pendientes; prioridad interna se muestra separada.
+- Revisión humana de categoría, prioridad, estado y relación de duplicados.
+- Estados Nueva, En revisión, Cerrada, Falsa alarma y No es alerta.
+- Historial con actor, fecha, valores anteriores/nuevos y motivo.
+- Correo original EML y SHA-256; los adjuntos originales quedan dentro del EML.
+- Texto/HTML y adjuntos de texto, CSV, JSON/XML hasta 100 KB se analizan.
+  PDF, Office, imágenes y adjuntos extensos se señalan para revisión manual.
+- Recepción de correos no SOC para revisión, sin obedecer su contenido como instrucciones.
+- Duplicados conservados y relacionados por ID AL/SOC o cuerpo idéntico.
+  La clasificación por reglas y los duplicados son propuestas revisables, no certezas.
+- Estadísticas globales por clase, fuente, prioridad y día; equipos/usuarios más afectados.
+- Búsqueda de todo el histórico guardado; paginación de 200 correos.
+- Backend y esquema PostgreSQL preparados para conectar con la BD del compañero.
+- API de bloqueos del equipo 2 con autorización y comprobación; clave pendiente.
+
+VALIDACIÓN Y LÍMITES
+Hay ejecuciones correctas del flujo real Outlook -> web. La importación del histórico
+se verifica por separado; que el flujo de nuevos correos funcione no prueba el histórico.
+Límite del receptor: EML 2 MB, JSON 3,2 MB, cuerpo 150.000 caracteres. Un correo mayor
+falla de forma visible en Power Automate; debe conservarse/importarse por otro canal
+acordado, no descartarse silenciosamente.
+Fechas ISO con zona explícita se normalizan a UTC; fechas ambiguas requieren revisión.
+Las gráficas usan UTC por día. La lista muestra recepción en Europe/Madrid.
+Filtros de prioridad/tema operan sobre los registros cargados; el buscador consulta
+el histórico completo. Cargar más resultados amplía el conjunto visible.
+
+TRABAJO DEL EQUIPO PENDIENTE
+- Datos de conexión y prueba real de PostgreSQL según la ficha de la organización.
+- Acordar retención, copias de seguridad y permisos de lectura para el director.
+- Confirmar remitentes y revisar reglas frente a los correos reales del reto.
+- Registrar las nuevas directrices del director y su respuesta con evidencias.
+- Investigar relaciones y explicar hallazgos: el sistema ayuda a buscar, no inventa hechos.
+- Análisis económico con datos del director, hipótesis explícitas y escenarios.
+- Presentación de cinco minutos, propuestas y conclusión del equipo.
+
+USO DE IA
+Codex ha ayudado a programar, configurar y probar. La clasificación de correos se
+realiza mediante reglas deterministas locales, no enviando el contenido a un modelo.
+El equipo debe revisar y entender estas decisiones y presentar las limitaciones.
