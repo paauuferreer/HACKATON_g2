@@ -16,6 +16,9 @@ test('integración: EML, duplicados relacionados, revisión, estadísticas y aud
  const review={incidentId:firstData.id,revision:0,incibeClass:'Intrusión',priority:'Alta',status:'En revisión',reason:'Confirmado tras revisión de la evidencia.',duplicateOf:null};
  await assert.rejects(()=>reviewIncident('intruso@example.invalid',review),/responsable/);await reviewIncident('analista@example.invalid',review);await assert.rejects(()=>reviewIncident('analista@example.invalid',review),/modificado/);
  const after:any=await (await readSoc(new Request('https://local/soc'),'analista@example.invalid')).json();assert.ok(after.audit.some((r:any)=>r.event==='alerta_revisada'));assert.equal(after.incidents.find((r:any)=>r.id===firstData.id).revision,1);
+ const activity:any=await (await readSoc(new Request('https://local/soc?view=ip-activity&from=2026-11-03&to=2026-11-03&ip=192.0.2.1'),'analista@example.invalid')).json();
+ assert.equal(activity.summary.alerts,1);assert.equal(activity.heatmap[0].hour,12);assert.equal(activity.ranking[0].ip,'192.0.2.1');
+ await assert.rejects(()=>readSoc(new Request('https://local/soc?view=ip-activity&ip=999.1.1.1'),'analista@example.invalid'),/IPv4 o IPv6/);
  const ev=await readSoc(new Request('https://local/soc?view=evidence&id='+firstData.id),'analista@example.invalid');assert.equal(ev.status,200);assert.match(await ev.text(),/AL-20261030/);
  assert.equal((await ingest({...mail,messageId:'other',sender:'director@example.invalid',subject:'Nueva directriz',body:'Revisar el histórico',emlBase64:Buffer.from('From: director@example.invalid\r\nSubject: Nueva directriz\r\n\r\nRevisar el histórico').toString('base64')})).status,201);
  sqlite.close();
