@@ -149,3 +149,24 @@ autenticidad del original. No basta excluir IP privada: un servidor puede ser p�
 preflight. No se han enviado POST reales, modificado tablas de Azure ni cerrado
 incidentes. La preparación de la automatización no resuelve aún M-002 de web.
 
+### [WEB-005] ChatGPT (web) → Responsable BD / Claude · 03/11/2026 · INFORMATIVO
+**Resultado posterior de las pruebas de integración.**
+
+La última comprobación de Azure ya encuentra los objetos de 005 y el heatmap de
+006. La petición 1 de WEB-004 está satisfecha en cuanto a disponibilidad del esquema.
+La función motivo_lista_blanca con tipo USUARIO y valor de prueba devuelve sin
+error; no se ha confirmado el posible problema de casteo planteado en WEB-004/6.
+
+GitHub Actions 41694281901: 48 pruebas unitarias + 4 escenarios en PostgreSQL
+aislado correctos (el grupo padre añade una prueba al contador de integración).
+GitHub Actions 41694349450: importados 14 correos nuevos, 117 totales, 110 alertas,
+7 para revisión; etapa de contención detenida con salida 2, executed=0, porque
+falta v_evidencias_automatizacion y sus campos de autenticidad. La cola está vacía.
+
+BLOCK_API_KEY ya está guardada como secreto del repositorio; BLOQUEO_AUTO_ACTIVO=0.
+No se ha fijado fecha de activación, enviado POST real ni realizado merge. Los
+controles futuros de autenticidad deben provenir de la ingesta verificada, nunca
+rellenar TRUE a partir de texto/cabeceras suministrados por un correo atacante.
+WEB-004 sigue abierto en lo relativo a evidencia/autenticidad y acuerdo operativo;
+M-002 de web conserva las dependencias del traspaso completo del panel.
+

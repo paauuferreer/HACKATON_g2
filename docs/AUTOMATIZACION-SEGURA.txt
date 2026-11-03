@@ -39,6 +39,7 @@ del correo ni de una cabecera aportada por el remitente sin validar su procedenc
 
 CONTRATO BD NECESARIO (área del responsable BD)
 1. Migración 005 aplicada en Azure: estado/origen, lista_blanca y reglas_bloqueo_auto.
+   Esta parte ya aparece disponible en la última comprobación del 03/11/2026.
 2. Vista v_evidencias_automatizacion, una fila por correo_id, con:
    correo_id, remitente_correo, cuerpo_correo_raw, eml_raw, cabeceras,
    autenticacion_verificada BOOLEAN, autenticacion_metodo TEXT,
@@ -86,6 +87,16 @@ Pruebas de transacciones en PostgreSQL aislado en CI: tests/automation-db.test.m
 No se envían bloqueos reales durante las pruebas. La base de pruebas solo admite
 localhost/automation_test y no utiliza la contraseña ni las tablas de Azure.
 Preflight Azure del 03/11/2026: contrato incompleto; 0 acciones ejecutadas.
+Validación GitHub Actions: 48 pruebas unitarias y 4 escenarios con PostgreSQL real
+aislado correctos (el runner cuenta además el grupo padre como una quinta prueba).
+Ejecución: https://github.com/paauuferreer/HACKATON_g2/actions/runs/41694281901
+Prueba cloud de integración con Azure: 14 correos nuevos importados, 117 totales,
+110 alertas y 7 correos para revisión. La etapa de automatización se detuvo con
+salida 2 porque falta v_evidencias_automatizacion; la cola está vacía.
+Ejecución: https://github.com/paauuferreer/HACKATON_g2/actions/runs/41694349450
+La comprobación de solo lectura de motivo_lista_blanca con un usuario es correcta.
+BLOCK_API_KEY está en secretos de GitHub; BLOQUEO_AUTO_ACTIVO=0. Ninguna clave
+está en el código, los archivos de entrega o los logs.
 
 NO ACTIVADO TODAVÍA
 Antes de cambiar BLOQUEO_AUTO_ACTIVO a 1: resolver el contrato/autenticidad anterior,
