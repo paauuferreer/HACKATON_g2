@@ -110,6 +110,8 @@ La configuración está en `config_autenticacion`. Las reglas de bloqueo tienen 
   - columnas `fase_disparadora`, `fases_previas` y `min_fases_previas`;
   - tiene las peligrosidades vacías, así que `evaluar_bloqueo_auto()` nunca la elige.
 - **014:** la corroboración y `min_alertas` cuentan IDs del SOC distintos, no filas.
+- **017 (WEB-008):** en AUTO-06 las fases previas solo cuentan si la alerta previa viene de un remitente de confianza y su correo supera `autenticidad_correo()`. La simulación previa no cambió ninguna decisión.
+- **018:** `v_kpis.bloqueos_ok` excluye las filas de la demo (`simulacion = TRUE`).
 
 ## Analítica temporal (migración 006, decisión D-004)
 Horas en Europe/Madrid. Columnas: `total` (carga, sin duplicados), `reales` (sin falsas alarmas ni no-SOC), `criticas`, `p1`.

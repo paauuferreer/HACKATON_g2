@@ -1,0 +1,286 @@
+<title>Cadena Moreno</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo+Narrow:wght@500;600;700&family=Public+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: sala de incidentes — cabecera con el veredicto, cifras clave, carriles por cuenta comprometida, después el método. */
+:root{
+  --bg:#f6f7f9; --panel:#ffffff; --ink:#151a22; --ink-2:#4a5463; --ink-3:#7a8494; --line:#dde2ea; --grid:#e9edf2;
+  --entrada:#2F68C2; --compromiso:#B57A06; --impacto:#B0306E;
+  --warn-bg:#fff4e0; --warn-ink:#7a4b00; --warn-line:#f0c879;
+  --ok-ink:#1d6b3a;
+  --f-display:"Archivo Narrow","Arial Narrow",Arial,sans-serif;
+  --f-body:"Public Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#12151b; --panel:#1a1f27; --ink:#e8ecf2; --ink-2:#aab3c0; --ink-3:#7f8896; --line:#2c333e; --grid:#232a34;
+  --entrada:#5E92EA; --compromiso:#C08A1C; --impacto:#DD5C9C;
+  --warn-bg:#2e2412; --warn-ink:#f2c36b; --warn-line:#6b5220; --ok-ink:#7fd29d; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#12151b; --panel:#1a1f27; --ink:#e8ecf2; --ink-2:#aab3c0; --ink-3:#7f8896; --line:#2c333e; --grid:#232a34;
+  --entrada:#5E92EA; --compromiso:#C08A1C; --impacto:#DD5C9C;
+  --warn-bg:#2e2412; --warn-ink:#f2c36b; --warn-line:#6b5220; --ok-ink:#7fd29d; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.55;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 56px}
+.wrap{max-width:1120px;margin:0 auto;display:grid;gap:28px}
+.eyebrow{font-family:var(--f-mono);font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3)}
+h1{font-family:var(--f-display);font-weight:700;font-size:clamp(40px,7vw,64px);line-height:1;margin:6px 0 10px;letter-spacing:-.01em;text-wrap:balance}
+h2{font-family:var(--f-display);font-weight:600;font-size:26px;line-height:1.15;margin:0 0 6px;text-wrap:balance}
+p{margin:0;max-width:68ch}
+.lead{font-size:17px;color:var(--ink-2)}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.banner{display:flex;gap:12px;align-items:flex-start;border:1px solid var(--warn-line);background:var(--warn-bg);color:var(--warn-ink);
+  border-radius:6px;padding:12px 14px;font-size:14px}
+.banner b{font-weight:600}
+.banner .ico{font-family:var(--f-mono);font-weight:500;border:1.5px solid currentColor;border-radius:4px;padding:0 6px;line-height:20px;flex:none}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.stat{background:var(--panel);padding:16px 18px;display:grid;gap:2px;align-content:start}
+.stat .n{font-family:var(--f-display);font-weight:700;font-size:38px;line-height:1;font-variant-numeric:tabular-nums}
+.stat .l{font-size:13px;color:var(--ink-2)}
+@media (max-width:720px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:20px;display:grid;gap:14px;min-width:0}
+.legend{display:flex;flex-wrap:wrap;gap:8px 18px;font-size:13px;color:var(--ink-2);align-items:center}
+.legend span{display:inline-flex;gap:7px;align-items:center}
+.legend svg{flex:none}
+.scroll{overflow-x:auto;margin:0 -4px;padding:0 4px}
+#chart{display:block;min-width:820px;width:100%;height:auto}
+#chart text{font-family:var(--f-body);fill:var(--ink-2)}
+#chart .t-axis{font-family:var(--f-mono);font-size:11px;fill:var(--ink-3)}
+#chart .t-user{font-family:var(--f-display);font-weight:600;font-size:16px;fill:var(--ink)}
+#chart .t-sub{font-size:11px;fill:var(--ink-3)}
+#chart .t-gain{font-family:var(--f-mono);font-size:11px;font-weight:500;fill:var(--compromiso)}
+#chart .t-chip{font-family:var(--f-mono);font-size:10px;fill:var(--warn-ink)}
+#chart .hit{cursor:pointer}
+#chart .hit:focus-visible{outline:none}
+#chart .hit:focus-visible .mk,#chart .hit:hover .mk{stroke:var(--ink);stroke-width:2}
+.tip{position:fixed;z-index:20;pointer-events:none;background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:6px;
+  box-shadow:0 6px 24px rgba(0,0,0,.14);padding:10px 12px;font-size:13px;max-width:300px;display:grid;gap:3px}
+.tip .k{font-family:var(--f-mono);font-size:11px;color:var(--ink-3)}
+.tip .ph{font-weight:600}
+.cols{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+@media (max-width:760px){.cols{grid-template-columns:1fr}}
+ol.steps{margin:0;padding:0;list-style:none;display:grid;gap:6px;counter-reset:s}
+ol.steps li{counter-increment:s;display:grid;grid-template-columns:28px 1fr;gap:8px;align-items:baseline;font-size:14px}
+ol.steps li::before{content:counter(s);font-family:var(--f-mono);font-size:12px;color:var(--ink-3);text-align:right}
+.tag{display:inline-block;font-family:var(--f-mono);font-size:11px;padding:1px 6px;border-radius:3px;border:1px solid var(--line);color:var(--ink-2)}
+.rules{display:grid;gap:12px}
+.rule{display:grid;grid-template-columns:96px 1fr;gap:12px;align-items:baseline;border-top:1px solid var(--line);padding-top:12px}
+.rule:first-child{border-top:0;padding-top:0}
+.rule .id{font-family:var(--f-mono);font-weight:500;font-size:13px}
+@media (max-width:520px){.rule{grid-template-columns:1fr;gap:2px}}
+details summary{cursor:pointer;font-weight:600}
+details summary:focus-visible{outline:2px solid var(--entrada);outline-offset:2px}
+table{border-collapse:collapse;width:100%;font-size:13px;min-width:680px}
+th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-weight:600;color:var(--ink-2);font-size:12px}
+td.mono{white-space:nowrap}
+.foot{font-size:12px;color:var(--ink-3)}
+@media (prefers-reduced-motion:no-preference){.mk{transition:stroke-width .12s}}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Investigación · Equipo 2 · instantánea <span id="gen"></span> (hora de Madrid)</div>
+    <h1>Cadena Moreno</h1>
+    <p class="lead">Una sola intrusión salta de cuenta en cuenta cada <span id="lead-ritmo"></span> minutos: <span id="lead-n"></span> cuentas *moreno, cada una en un equipo distinto (<span id="lead-eq"></span>) y en <span id="lead-sedes"></span> sedes. Todas acaban igual: mando y control y ficheros alterados, la fase del ransomware.</p>
+  </header>
+
+  <div class="banner" role="status"><span class="ico">401</span><p><b><span id="cola-n"></span> bloqueos en cola y 0 ejecutados contra la API real.</b> La API rechaza la clave del equipo (401) desde la noche del 03/11 y la organización no la repondrá; la causa no está confirmada. Contra el simulador local etiquetado, la misma cola se ejecutó y verificó de extremo a extremo (<span id="demo-n"></span> bloqueos simulados). La contención real la hizo Infra: a las 5:30 el director informó de que el servidor estaba aislado.</p></div>
+
+  <section class="stats" aria-label="Cifras clave">
+    <div class="stat"><span class="n" id="k-cuentas"></span><span class="l">cuentas comprometidas en <span id="k-sedes"></span> sedes</span></div>
+    <div class="stat"><span class="n"><span id="k-ritmo"></span><small style="font-size:18px"> min</small></span><span class="l">de media entre una víctima y la siguiente</span></div>
+    <div class="stat"><span class="n" id="k-ganado"></span><span class="l">antes de la primera alerta crítica, al detectar la cuenta comprometida (AUTO-06)</span></div>
+    <div class="stat"><span class="n" id="k-fp"></span><span class="l">falsos positivos de AUTO-06 en la simulación sobre el histórico: <span id="k-desc"></span> accesos sueltos descartados</span></div>
+  </section>
+
+  <section class="panel" aria-labelledby="h-carriles">
+    <div>
+      <h2 id="h-carriles">Cada cuenta, fase a fase</h2>
+      <p style="color:var(--ink-2)">Eje: hora en que el SOC avisó por correo (03/11 → 04/11). Pasa el cursor o el foco por un punto para ver la alerta. El tramo ámbar es el tiempo que se gana bloqueando al detectar la cuenta comprometida, sin esperar a la alerta crítica.</p>
+    </div>
+    <div class="legend" aria-label="Leyenda">
+      <span><svg width="14" height="14" aria-hidden="true"><circle cx="7" cy="7" r="5.5" fill="var(--entrada)"/></svg>Entrada: reconocimiento, phishing, fuerza bruta</span>
+      <span><svg width="14" height="14" aria-hidden="true"><rect x="2.5" y="2.5" width="9" height="9" transform="rotate(45 7 7)" fill="var(--compromiso)"/></svg>Cuenta comprometida, lectura indebida</span>
+      <span><svg width="14" height="14" aria-hidden="true"><rect x="2" y="2" width="10" height="10" fill="var(--impacto)"/></svg>Mando y control, ejecución, impacto</span>
+      <span><svg width="22" height="14" aria-hidden="true"><line x1="1" y1="7" x2="21" y2="7" stroke="var(--compromiso)" stroke-width="4" stroke-linecap="round" opacity=".45"/></svg>Ventaja de AUTO-06</span>
+    </div>
+    <div class="scroll"><svg id="chart" role="img" aria-labelledby="chart-desc"><desc id="chart-desc">Línea temporal por cuenta de la cadena Moreno; los mismos datos están en la tabla de abajo.</desc></svg></div>
+  </section>
+
+  <section class="cols">
+    <div class="panel">
+      <h2>Vía 1 · robo de credenciales</h2>
+      <p style="color:var(--ink-2)" id="via1"></p>
+      <ol class="steps">
+        <li>Correo con formulario falso de acceso</li>
+        <li>Ráfaga de accesos fallidos a la cuenta</li>
+        <li><span>Acceso correcto que la persona titular no reconoce <span class="tag">AUTO-06 bloquea aquí</span></span></li>
+        <li>Lectura de documentos fuera de los permisos</li>
+        <li>Conexiones periódicas a infraestructura de mando</li>
+        <li>Alteración de ficheros o pérdida de datos</li>
+      </ol>
+    </div>
+    <div class="panel">
+      <h2>Vía 2 · explotación del equipo</h2>
+      <p style="color:var(--ink-2)" id="via2"></p>
+      <ol class="steps">
+        <li>Sondeo secuencial de puertos sobre el equipo</li>
+        <li>Petición con patrón de explotación conocido</li>
+        <li>Aplicación ejecuta un proceso fuera de su función</li>
+        <li>Conexiones periódicas a infraestructura de mando</li>
+        <li>Lectura de documentos fuera de los permisos</li>
+        <li>Alteración no autorizada de ficheros</li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="panel" aria-labelledby="h-reglas">
+    <h2 id="h-reglas">Cómo responde el sistema</h2>
+    <div class="rules">
+      <div class="rule"><span class="id">AUTO-05</span><p>Bloqueo automático con alerta crítica verificada: asunto CRÍTICO (la prioridad no es fiable), cuerpo Crítica o Alta (Media o Baja solo si otra alerta crítica lo corrobora), clase de compromiso y correo del SOC autenticado por las cabeceras de Exchange.</p></div>
+      <div class="rule"><span class="id">AUTO-06</span><p>Bloqueo temprano por correlación: cuenta comprometida precedida de phishing o fuerza bruta sobre el mismo usuario en 2 h. Se adelanta entre <span id="r-min"></span> y <span id="r-max"></span> minutos a la alerta crítica y descarta los accesos sueltos que no forman cadena. Desde la migración 017, las fases previas solo cuentan si su correo del SOC está verificado.</p></div>
+      <div class="rule"><span class="id">MANUAL</span><p>Decisión del equipo para las cuentas de la cadena que las reglas dejan en recomendación (cmoreno, emoreno) y contención preventiva de las víctimas nuevas (fmoreno, gmoreno).</p></div>
+      <div class="rule"><span class="id">NUNCA</span><p>Bloqueos pedidos por correo, IPs de forma automática, cuentas de servicio o en lista blanca, ni repetir una llamada a la API con resultado dudoso. Cada decisión, también los descartes, queda justificada en la base de datos.</p></div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <details>
+      <summary>Tabla de alertas de la cadena (<span id="t-n"></span>)</summary>
+      <div class="scroll" style="margin-top:12px"><table id="tabla"><thead><tr><th>Cuenta</th><th>Aviso</th><th>Evento</th><th>Fase</th><th>Alerta</th><th>Gravedad</th><th>ID</th></tr></thead><tbody></tbody></table></div>
+    </details>
+  </section>
+
+  <p class="foot">Fuente: PostgreSQL del equipo (vistas v_fases_alertas, v_cadena_victimas, v_bloqueos_activos y decisiones_bloqueo_auto). Instantánea estática generada con docs/infografias/generar_cadena.py; los datos en directo están en la base de datos.</p>
+</div>
+<div class="tip" id="tip" hidden></div>
+
+<script>
+const D = {"generado": "04/11/2026 09:20", "fases": [{"fase": "RECONOCIMIENTO", "orden": 1, "nombre": "Reconocimiento"}, {"fase": "ACCESO_INICIAL", "orden": 2, "nombre": "Phishing"}, {"fase": "CREDENCIALES", "orden": 3, "nombre": "Fuerza bruta"}, {"fase": "COMPROMISO", "orden": 4, "nombre": "Cuenta comprometida"}, {"fase": "RECOLECCION", "orden": 5, "nombre": "Lectura indebida"}, {"fase": "MANDO_CONTROL", "orden": 6, "nombre": "Mando y control"}, {"fase": "EJECUCION", "orden": 7, "nombre": "Ejecución / persistencia"}, {"fase": "IMPACTO", "orden": 8, "nombre": "Impacto (cifrado / pérdida)"}], "victimas": [{"victima": "jmoreno@sampol.com", "equipo": "srv-barcelona-201", "sede": "Barcelona", "inicio": "2026-11-03T13:40:49+00:00", "eventos": [{"fase": "ACCESO_INICIAL", "orden": 2, "aviso": "2026-11-03T14:40", "evento": "30/10 03:41", "titulo": "Mensaje con formulario falso de acceso", "grav": "ALTO", "id": "AL-20261030-0025"}, {"fase": "CREDENCIALES", "orden": 3, "aviso": "2026-11-03T14:52", "evento": "30/10 03:54", "titulo": "Ráfaga de accesos fallidos a la cuenta", "grav": "ALTO", "id": "AL-20261030-0026"}, {"fase": "COMPROMISO", "orden": 4, "aviso": "2026-11-03T15:11", "evento": "30/10 04:20", "titulo": "Acceso correcto que la persona titular no reconoce", "grav": "ALTO", "id": "AL-20261030-0027"}, {"fase": "RECOLECCION", "orden": 5, "aviso": "2026-11-03T15:27", "evento": "30/10 04:33", "titulo": "Lectura de documentos fuera de los permisos aprobados", "grav": "ALTO", "id": "AL-20261030-0028"}, {"fase": "MANDO_CONTROL", "orden": 6, "aviso": "2026-11-03T15:50", "evento": "30/10 04:46", "titulo": "Conexiones periódicas a infraestructura de mando", "grav": "CRITICO", "id": "AL-20261030-0029"}, {"fase": "IMPACTO", "orden": 8, "aviso": "2026-11-03T16:14", "evento": "30/10 04:59", "titulo": "Alteración no autorizada de ficheros del proyecto", "grav": "CRITICO", "id": "AL-20261030-0030"}], "bloqueo": {"estado": "PENDIENTE", "origen": "AUTOMATICO", "regla": "AUTO-05", "confirmado": false}}, {"victima": "amoreno@sampol.com", "equipo": "pc-sevilla-202", "sede": "Sevilla", "inicio": "2026-11-03T14:33:18+00:00", "eventos": [{"fase": "RECONOCIMIENTO", "orden": 1, "aviso": "2026-11-03T15:33", "evento": "30/10 04:35", "titulo": "Sondeo secuencial de puertos", "grav": "MEDIO", "id": "AL-20261030-0031"}, {"fase": "RECONOCIMIENTO", "orden": 1, "aviso": "2026-11-03T15:56", "evento": "30/10 04:48", "titulo": "Petición bloqueada con patrón de explotación conocido", "grav": "ALTO", "id": "AL-20261030-0032"}, {"fase": "EJECUCION", "orden": 7, "aviso": "2026-11-03T16:20", "evento": "30/10 05:01", "titulo": "Aplicación ejecuta proceso fuera de su función", "grav": "CRITICO", "id": "AL-20261030-0033"}, {"fase": "MANDO_CONTROL", "orden": 6, "aviso": "2026-11-03T16:37", "evento": "30/10 05:14", "titulo": "Conexiones periódicas a infraestructura de mando", "grav": "CRITICO", "id": "AL-20261030-0034"}, {"fase": "RECOLECCION", "orden": 5, "aviso": "2026-11-03T17:07", "evento": "30/10 05:27", "titulo": "Lectura de documentos fuera de los permisos aprobados", "grav": "ALTO", "id": "AL-20261030-0035"}, {"fase": "IMPACTO", "orden": 8, "aviso": "2026-11-03T17:25", "evento": "30/10 05:40", "titulo": "Alteración no autorizada de ficheros del proyecto", "grav": "CRITICO", "id": "AL-20261030-0036"}], "bloqueo": {"estado": "PENDIENTE", "origen": "AUTOMATICO", "regla": "AUTO-05", "confirmado": false}}, {"victima": "cmoreno@sampol.com", "equipo": "app-valencia-203", "sede": "Valencia", "inicio": "2026-11-03T15:49:36+00:00", "eventos": [{"fase": "ACCESO_INICIAL", "orden": 2, "aviso": "2026-11-03T16:49", "evento": "30/10 05:16", "titulo": "Mensaje con formulario falso de acceso", "grav": "ALTO", "id": "AL-20261030-0037"}, {"fase": "COMPROMISO", "orden": 4, "aviso": "2026-11-03T17:13", "evento": "30/10 05:29", "titulo": "Acceso correcto que la persona titular no reconoce", "grav": "ALTO", "id": "AL-20261030-0038"}, {"fase": "EJECUCION", "orden": 7, "aviso": "2026-11-03T17:37", "evento": "30/10 05:42", "titulo": "Proceso malicioso detectado en el equipo", "grav": "ALTO", "id": "AL-20261030-0039"}, {"fase": "MANDO_CONTROL", "orden": 6, "aviso": "2026-11-03T17:54", "evento": "30/10 06:08", "titulo": "Conexiones periódicas a infraestructura de mando", "grav": "CRITICO", "id": "AL-20261030-0040"}, {"fase": "RECOLECCION", "orden": 5, "aviso": "2026-11-03T18:13", "evento": "30/10 06:21", "titulo": "Lectura de documentos fuera de los permisos aprobados", "grav": "ALTO", "id": "AL-20261030-0041"}, {"fase": "IMPACTO", "orden": 8, "aviso": "2026-11-03T18:41", "evento": "30/10 06:34", "titulo": "Datos perdidos tras avería de almacenamiento", "grav": "ALTO", "id": "AL-20261030-0042"}], "bloqueo": {"estado": "PENDIENTE", "origen": "MANUAL", "regla": "MANUAL:D-007", "confirmado": false}}, {"victima": "bmoreno@sampol.com", "equipo": "gw-bilbao-204", "sede": "Bilbao", "inicio": "2026-11-03T17:01:07+00:00", "eventos": [{"fase": "ACCESO_INICIAL", "orden": 2, "aviso": "2026-11-03T18:01", "evento": "30/10 06:10", "titulo": "Mensaje con formulario falso de acceso", "grav": "ALTO", "id": "AL-20261030-0043"}, {"fase": "CREDENCIALES", "orden": 3, "aviso": "2026-11-03T18:24", "evento": "30/10 06:23", "titulo": "Ráfaga de accesos fallidos a la cuenta", "grav": "ALTO", "id": "AL-20261030-0044"}, {"fase": "COMPROMISO", "orden": 4, "aviso": "2026-11-03T18:47", "evento": "30/10 06:36", "titulo": "Acceso correcto que la persona titular no reconoce", "grav": "ALTO", "id": "AL-20261030-0045"}, {"fase": "RECOLECCION", "orden": 5, "aviso": "2026-11-03T19:03", "evento": "30/10 06:49", "titulo": "Lectura de documentos fuera de los permisos aprobados", "grav": "ALTO", "id": "AL-20261030-0046"}, {"fase": "MANDO_CONTROL", "orden": 6, "aviso": "2026-11-03T19:31", "evento": "30/10 07:02", "titulo": "Conexiones periódicas a infraestructura de mando", "grav": "CRITICO", "id": "AL-20261030-0047"}, {"fase": "IMPACTO", "orden": 8, "aviso": "2026-11-03T19:53", "evento": "30/10 07:15", "titulo": "Alteración no autorizada de ficheros del proyecto", "grav": "CRITICO", "id": "AL-20261030-0048"}], "bloqueo": {"estado": "PENDIENTE", "origen": "AUTOMATICO", "regla": "AUTO-05", "confirmado": false}}, {"victima": "dmoreno@sampol.com", "equipo": "srv-palma-205", "sede": "Palma", "inicio": "2026-11-03T18:08:55+00:00", "eventos": [{"fase": "RECONOCIMIENTO", "orden": 1, "aviso": "2026-11-03T19:08", "evento": "30/10 06:51", "titulo": "Sondeo secuencial de puertos", "grav": "MEDIO", "id": "AL-20261030-0049"}, {"fase": "RECONOCIMIENTO", "orden": 1, "aviso": "2026-11-03T19:37", "evento": "30/10 07:04", "titulo": "Petición bloqueada con patrón de explotación conocido", "grav": "ALTO", "id": "AL-20261030-0050"}, {"fase": "EJECUCION", "orden": 7, "aviso": "2026-11-03T20:04", "evento": "30/10 07:17", "titulo": "Aplicación ejecuta proceso fuera de su función", "grav": "CRITICO", "id": "AL-20261030-0051"}, {"fase": "MANDO_CONTROL", "orden": 6, "aviso": "2026-11-03T20:20", "evento": "30/10 07:30", "titulo": "Conexiones periódicas a infraestructura de mando", "grav": "CRITICO", "id": "AL-20261030-0052"}, {"fase": "RECOLECCION", "orden": 5, "aviso": "2026-11-03T20:45", "evento": "30/10 07:56", "titulo": "Lectura de documentos fuera de los permisos aprobados", "grav": "ALTO", "id": "AL-20261030-0053"}, {"fase": "IMPACTO", "orden": 8, "aviso": "2026-11-03T21:03", "evento": "30/10 08:09", "titulo": "Alteración no autorizada de ficheros del proyecto", "grav": "CRITICO", "id": "AL-20261030-0054"}], "bloqueo": {"estado": "PENDIENTE", "origen": "AUTOMATICO", "regla": "AUTO-05", "confirmado": false}}, {"victima": "emoreno@sampol.com", "equipo": "pc-madrid-206", "sede": "Madrid", "inicio": "2026-11-03T19:39:37+00:00", "eventos": [{"fase": "ACCESO_INICIAL", "orden": 2, "aviso": "2026-11-03T20:39", "evento": "30/10 07:45", "titulo": "Mensaje con formulario falso de acceso", "grav": "ALTO", "id": "AL-20261030-0055"}, {"fase": "COMPROMISO", "orden": 4, "aviso": "2026-11-03T20:51", "evento": "30/10 07:58", "titulo": "Acceso correcto que la persona titular no reconoce", "grav": "ALTO", "id": "AL-20261030-0056"}, {"fase": "EJECUCION", "orden": 7, "aviso": "2026-11-03T21:10", "evento": "30/10 08:11", "titulo": "Proceso malicioso detectado en el equipo", "grav": "ALTO", "id": "AL-20261030-0057"}, {"fase": "MANDO_CONTROL", "orden": 6, "aviso": "2026-11-03T21:34", "evento": "30/10 08:24", "titulo": "Conexiones periódicas a infraestructura de mando", "grav": "CRITICO", "id": "AL-20261030-0058"}, {"fase": "RECOLECCION", "orden": 5, "aviso": "2026-11-03T22:03", "evento": "30/10 08:37", "titulo": "Lectura de documentos fuera de los permisos aprobados", "grav": "ALTO", "id": "AL-20261030-0059"}, {"fase": "IMPACTO", "orden": 8, "aviso": "2026-11-03T22:31", "evento": "30/10 08:50", "titulo": "Datos perdidos tras avería de almacenamiento", "grav": "ALTO", "id": "AL-20261030-0060"}], "bloqueo": {"estado": "PENDIENTE", "origen": "MANUAL", "regla": "MANUAL:D-007", "confirmado": false}}, {"victima": "fmoreno@sampol.com", "equipo": "app-barcelona-207", "sede": "Barcelona", "inicio": "2026-11-03T20:51:48+00:00", "eventos": [{"fase": "ACCESO_INICIAL", "orden": 2, "aviso": "2026-11-03T21:51", "evento": "30/10 08:26", "titulo": "Mensaje con formulario falso de acceso", "grav": "ALTO", "id": "AL-20261030-0061"}, {"fase": "CREDENCIALES", "orden": 3, "aviso": "2026-11-03T22:09", "evento": "30/10 08:39", "titulo": "Ráfaga de accesos fallidos a la cuenta", "grav": "ALTO", "id": "AL-20261030-0062"}, {"fase": "COMPROMISO", "orden": 4, "aviso": "2026-11-03T22:41", "evento": "30/10 08:52", "titulo": "Acceso correcto que la persona titular no reconoce", "grav": "ALTO", "id": "AL-20261030-0063"}, {"fase": "RECOLECCION", "orden": 5, "aviso": "2026-11-03T22:59", "evento": "30/10 09:05", "titulo": "Lectura de documentos fuera de los permisos aprobados", "grav": "ALTO", "id": "AL-20261030-0064"}, {"fase": "MANDO_CONTROL", "orden": 6, "aviso": "2026-11-03T23:27", "evento": "30/10 09:18", "titulo": "Conexiones periódicas a infraestructura de mando", "grav": "CRITICO", "id": "AL-20261030-0065"}, {"fase": "IMPACTO", "orden": 8, "aviso": "2026-11-03T23:45", "evento": "30/10 09:44", "titulo": "Alteración no autorizada de ficheros del proyecto", "grav": "CRITICO", "id": "AL-20261030-0066"}], "bloqueo": {"estado": "PENDIENTE", "origen": "MANUAL", "regla": "MANUAL:D-007", "confirmado": false}}, {"victima": "gmoreno@sampol.com", "equipo": "gw-sevilla-208", "sede": "Sevilla", "inicio": "2026-11-03T22:16:04+00:00", "eventos": [{"fase": "RECONOCIMIENTO", "orden": 1, "aviso": "2026-11-03T23:16", "evento": "30/10 09:20", "titulo": "Sondeo secuencial de puertos", "grav": "MEDIO", "id": "AL-20261030-0067"}, {"fase": "RECONOCIMIENTO", "orden": 1, "aviso": "2026-11-03T23:33", "evento": "30/10 09:33", "titulo": "Petición bloqueada con patrón de explotación conocido", "grav": "ALTO", "id": "AL-20261030-0068"}, {"fase": "EJECUCION", "orden": 7, "aviso": "2026-11-03T23:50", "evento": "30/10 09:46", "titulo": "Aplicación ejecuta proceso fuera de su función", "grav": "CRITICO", "id": "AL-20261030-0069"}, {"fase": "MANDO_CONTROL", "orden": 6, "aviso": "2026-11-04T00:14", "evento": "30/10 09:59", "titulo": "Conexiones periódicas a infraestructura de mando", "grav": "CRITICO", "id": "AL-20261030-0070"}, {"fase": "RECOLECCION", "orden": 5, "aviso": "2026-11-04T00:31", "evento": "30/10 10:12", "titulo": "Lectura de documentos fuera de los permisos aprobados", "grav": "ALTO", "id": "AL-20261030-0071"}, {"fase": "IMPACTO", "orden": 8, "aviso": "2026-11-04T00:53", "evento": "30/10 10:25", "titulo": "Alteración no autorizada de ficheros del proyecto", "grav": "CRITICO", "id": "AL-20261030-0072"}], "bloqueo": {"estado": "PENDIENTE", "origen": "MANUAL", "regla": "MANUAL:D-007", "confirmado": false}}, {"victima": "hmoreno@sampol.com", "equipo": "srv-valencia-209", "sede": "Valencia", "inicio": "2026-11-03T23:25:35+00:00", "eventos": [{"fase": "ACCESO_INICIAL", "orden": 2, "aviso": "2026-11-04T00:25", "evento": "30/10 10:01", "titulo": "Mensaje con formulario falso de acceso", "grav": "ALTO", "id": "AL-20261030-0073"}, {"fase": "COMPROMISO", "orden": 4, "aviso": "2026-11-04T00:43", "evento": "30/10 10:14", "titulo": "Acceso correcto que la persona titular no reconoce", "grav": "ALTO", "id": "AL-20261030-0074"}, {"fase": "EJECUCION", "orden": 7, "aviso": "2026-11-04T01:06", "evento": "30/10 10:27", "titulo": "Proceso malicioso detectado en el equipo", "grav": "ALTO", "id": "AL-20261030-0075"}, {"fase": "MANDO_CONTROL", "orden": 6, "aviso": "2026-11-04T01:23", "evento": "30/10 10:40", "titulo": "Conexiones periódicas a infraestructura de mando", "grav": "CRITICO", "id": "AL-20261030-0076"}, {"fase": "RECOLECCION", "orden": 5, "aviso": "2026-11-04T01:44", "evento": "30/10 10:53", "titulo": "Lectura de documentos fuera de los permisos aprobados", "grav": "ALTO", "id": "AL-20261030-0077"}, {"fase": "IMPACTO", "orden": 8, "aviso": "2026-11-04T02:09", "evento": "30/10 11:06", "titulo": "Datos perdidos tras avería de almacenamiento", "grav": "ALTO", "id": "AL-20261030-0078"}], "bloqueo": {"estado": "PENDIENTE", "origen": "AUTOMATICO", "regla": "AUTO-05", "confirmado": false}}, {"victima": "imoreno@sampol.com", "equipo": "pc-bilbao-210", "sede": "Bilbao", "inicio": "2026-11-04T00:39:06+00:00", "eventos": [{"fase": "ACCESO_INICIAL", "orden": 2, "aviso": "2026-11-04T01:39", "evento": "30/10 10:55", "titulo": "Mensaje con formulario falso de acceso", "grav": "ALTO", "id": "AL-20261030-0079"}, {"fase": "CREDENCIALES", "orden": 3, "aviso": "2026-11-04T01:56", "evento": "30/10 11:08", "titulo": "Ráfaga de accesos fallidos a la cuenta", "grav": "ALTO", "id": "AL-20261030-0080"}, {"fase": "COMPROMISO", "orden": 4, "aviso": "2026-11-04T02:14", "evento": "30/10 11:21", "titulo": "Acceso correcto que la persona titular no reconoce", "grav": "ALTO", "id": "AL-20261030-0081"}, {"fase": "RECOLECCION", "orden": 5, "aviso": "2026-11-04T02:44", "evento": "30/10 11:34", "titulo": "Lectura de documentos fuera de los permisos aprobados", "grav": "ALTO", "id": "AL-20261030-0082"}, {"fase": "MANDO_CONTROL", "orden": 6, "aviso": "2026-11-04T03:09", "evento": "30/10 11:47", "titulo": "Conexiones periódicas a infraestructura de mando", "grav": "CRITICO", "id": "AL-20261030-0083"}, {"fase": "IMPACTO", "orden": 8, "aviso": "2026-11-04T03:34", "evento": "30/10 12:00", "titulo": "Alteración no autorizada de ficheros del proyecto", "grav": "CRITICO", "id": "AL-20261030-0084"}], "bloqueo": {"estado": "PENDIENTE", "origen": "AUTOMATICO", "regla": "AUTO-06", "confirmado": false}}, {"victima": "vmoreno@sampol.com", "equipo": "app-palma-211", "sede": "Palma", "inicio": "2026-11-04T01:57:41+00:00", "eventos": [{"fase": "RECONOCIMIENTO", "orden": 1, "aviso": "2026-11-04T02:57", "evento": "30/10 11:36", "titulo": "Sondeo secuencial de puertos", "grav": "MEDIO", "id": "AL-20261030-0085"}, {"fase": "RECONOCIMIENTO", "orden": 1, "aviso": "2026-11-04T03:28", "evento": "30/10 11:49", "titulo": "Petición bloqueada con patrón de explotación conocido", "grav": "ALTO", "id": "AL-20261030-0086"}, {"fase": "EJECUCION", "orden": 7, "aviso": "2026-11-04T03:40", "evento": "30/10 12:02", "titulo": "Aplicación ejecuta proceso fuera de su función", "grav": "CRITICO", "id": "AL-20261030-0087"}, {"fase": "MANDO_CONTROL", "orden": 6, "aviso": "2026-11-04T04:03", "evento": "30/10 12:15", "titulo": "Conexiones periódicas a infraestructura de mando", "grav": "CRITICO", "id": "AL-20261030-0088"}, {"fase": "RECOLECCION", "orden": 5, "aviso": "2026-11-04T04:21", "evento": "30/10 12:28", "titulo": "Lectura de documentos fuera de los permisos aprobados", "grav": "ALTO", "id": "AL-20261030-0089"}, {"fase": "IMPACTO", "orden": 8, "aviso": "2026-11-04T04:46", "evento": "30/10 12:41", "titulo": "Alteración no autorizada de ficheros del proyecto", "grav": "CRITICO", "id": "AL-20261030-0090"}], "bloqueo": {"estado": "PENDIENTE", "origen": "AUTOMATICO", "regla": "AUTO-05", "confirmado": false}}, {"victima": "lmoreno@sampol.com", "equipo": "gw-madrid-212", "sede": "Madrid", "inicio": "2026-11-04T03:09:45+00:00", "eventos": [{"fase": "ACCESO_INICIAL", "orden": 2, "aviso": "2026-11-04T04:09", "evento": "30/10 12:17", "titulo": "Mensaje con formulario falso de acceso", "grav": "ALTO", "id": "AL-20261030-0091"}, {"fase": "COMPROMISO", "orden": 4, "aviso": "2026-11-04T04:33", "evento": "30/10 12:43", "titulo": "Acceso correcto que la persona titular no reconoce", "grav": "ALTO", "id": "AL-20261030-0092"}, {"fase": "EJECUCION", "orden": 7, "aviso": "2026-11-04T04:58", "evento": "30/10 12:56", "titulo": "Proceso malicioso detectado en el equipo", "grav": "ALTO", "id": "AL-20261030-0093"}, {"fase": "MANDO_CONTROL", "orden": 6, "aviso": "2026-11-04T05:10", "evento": "30/10 13:09", "titulo": "Conexiones periódicas a infraestructura de mando", "grav": "CRITICO", "id": "AL-20261030-0094"}, {"fase": "RECOLECCION", "orden": 5, "aviso": "2026-11-04T05:23", "evento": "30/10 13:22", "titulo": "Lectura de documentos fuera de los permisos aprobados", "grav": "ALTO", "id": "AL-20261030-0095"}, {"fase": "IMPACTO", "orden": 8, "aviso": "2026-11-04T05:30", "evento": "30/10 13:35", "titulo": "Datos perdidos tras avería de almacenamiento", "grav": "ALTO", "id": "AL-20261030-0096"}], "bloqueo": {"estado": "PENDIENTE", "origen": "AUTOMATICO", "regla": "AUTO-06", "confirmado": false}}], "auto06": [{"usuario": "sperez@sampol.com", "decision": "DESCARTAR"}, {"usuario": "jmoreno@sampol.com", "decision": "YA_BLOQUEADO"}, {"usuario": "cmoreno@sampol.com", "decision": "YA_BLOQUEADO"}, {"usuario": "mgonzalez@sampol.com", "decision": "DESCARTAR"}, {"usuario": "bmoreno@sampol.com", "decision": "YA_BLOQUEADO"}, {"usuario": "ngonzalez@sampol.com", "decision": "DESCARTAR"}, {"usuario": "ogonzalez@sampol.com", "decision": "DESCARTAR"}, {"usuario": "pgonzalez@sampol.com", "decision": "DESCARTAR"}, {"usuario": "emoreno@sampol.com", "decision": "YA_BLOQUEADO"}, {"usuario": "fmoreno@sampol.com", "decision": "YA_BLOQUEADO"}, {"usuario": "imoreno@sampol.com", "decision": "BLOQUEAR"}, {"usuario": "ilopez@sampol.com", "decision": "DESCARTAR"}, {"usuario": "osanchez@sampol.com", "decision": "DESCARTAR"}, {"usuario": "hmoreno@sampol.com", "decision": "YA_BLOQUEADO"}, {"usuario": "lmoreno@sampol.com", "decision": "BLOQUEAR"}], "prediccion": {"min_medios_entre_avisos": 74, "siguiente": "05:23"}, "cola": {"pendientes": 16, "omitidas": 1, "ejecutadas": 0}, "demo": 13};
+const GRUPO = {RECONOCIMIENTO:'entrada',ACCESO_INICIAL:'entrada',CREDENCIALES:'entrada',COMPROMISO:'compromiso',RECOLECCION:'compromiso',MANDO_CONTROL:'impacto',EJECUCION:'impacto',IMPACTO:'impacto'};
+const NOMBRE = Object.fromEntries(D.fases.map(f=>[f.fase,f.nombre]));
+const t = s => { const [d,h] = s.split('T'); const [H,M] = h.split(':').map(Number); return (d.endsWith('-04')?24*60:0)+H*60+M; };
+const hhmm = m => String(Math.floor(m/60)%24).padStart(2,'0')+':'+String(m%60).padStart(2,'0');
+const local = u => u.split('@')[0];
+const NS = 'http://www.w3.org/2000/svg';
+const el = (n,a,p) => { const e=document.createElementNS(NS,n); for(const k in a) e.setAttribute(k,a[k]); if(p) p.appendChild(e); return e; };
+
+const vict = D.victimas;
+const cola = D.cola.pendientes;
+const auto06 = D.auto06 || [];
+const desc = auto06.filter(x=>x.decision==='DESCARTAR').length;
+const ganados = vict.map(v=>{const c=v.eventos.find(e=>e.fase==='COMPROMISO');const k=v.eventos.find(e=>e.grav==='CRITICO');return c&&k?t(k.aviso)-t(c.aviso):null}).filter(x=>x!=null);
+const ahora = (()=>{const [d,h]=D.generado.split(' ');const [H,M]=h.split(':').map(Number);return (d.startsWith('04/')?24*60:0)+H*60+M;})();
+const ultimo = Math.max(...vict.map(v=>t(v.eventos[0].aviso)));
+const siguiente = ultimo + D.prediccion.min_medios_entre_avisos;
+
+document.getElementById('gen').textContent = D.generado;
+document.getElementById('lead-n').textContent = vict.length;
+const nums = vict.map(v=>(v.equipo.match(/(\d+)$/)||[])[1]).filter(Boolean);
+const sedesN = new Set(vict.map(v=>v.sede)).size;
+document.getElementById('lead-eq').textContent = nums.length ? nums[0]+' → '+nums[nums.length-1] : '—';
+document.getElementById('lead-ritmo').textContent = D.prediccion.min_medios_entre_avisos;
+document.getElementById('lead-sedes').textContent = sedesN;
+document.getElementById('k-sedes').textContent = sedesN;
+document.getElementById('demo-n').textContent = D.demo || 0;
+const via1 = vict.filter(v=>v.eventos.some(e=>e.fase==='ACCESO_INICIAL'||e.fase==='CREDENCIALES')).map(v=>local(v.victima));
+document.getElementById('via1').textContent = via1.join(', ');
+document.getElementById('via2').textContent = vict.map(v=>local(v.victima)).filter(u=>!via1.includes(u)).join(', ');
+document.getElementById('cola-n').textContent = cola;
+document.getElementById('k-cuentas').textContent = vict.length;
+document.getElementById('k-ritmo').textContent = D.prediccion.min_medios_entre_avisos;
+document.getElementById('k-ganado').textContent = Math.min(...ganados)+'–'+Math.max(...ganados)+' min';
+document.getElementById('k-fp').textContent = '0';
+document.getElementById('k-desc').textContent = desc;
+document.getElementById('r-min').textContent = Math.min(...ganados);
+document.getElementById('r-max').textContent = Math.max(...ganados);
+
+// ---- carriles
+const svg = document.getElementById('chart');
+const W=1200, L=200, R=24, TOP=34, ROW=50;
+const todos = vict.flatMap(v=>v.eventos.map(e=>t(e.aviso)));
+const t0 = Math.floor((Math.min(...todos)-20)/60)*60, t1 = Math.max(...todos, siguiente, ahora)+30;
+const x = m => L + (m-t0)/(t1-t0)*(W-L-R);
+const filas = vict.length + 1;
+const H = TOP + filas*ROW + 8;
+svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
+for(let h=Math.ceil(t0/60); h*60<=t1; h++){
+  const xx=x(h*60);
+  el('line',{x1:xx,x2:xx,y1:TOP-8,y2:H-8,stroke:'var(--grid)','stroke-width':1},svg);
+  const tx=el('text',{x:xx,y:TOP-14,'text-anchor':'middle',class:'t-axis'},svg); tx.textContent=hhmm(h*60);
+}
+// ahora
+const xn=x(ahora);
+el('line',{x1:xn,x2:xn,y1:TOP-8,y2:H-8,stroke:'var(--ink-3)','stroke-width':1,'stroke-dasharray':'3 3'},svg);
+const tn=el('text',{x:xn-4,y:H-12,'text-anchor':'end',class:'t-axis'},svg); tn.textContent='ahora '+hhmm(ahora);
+
+const tip=document.getElementById('tip');
+function show(ev,e){
+  tip.innerHTML='';
+  const add=(c,s)=>{const d=document.createElement('div');d.className=c;d.textContent=s;tip.appendChild(d);};
+  add('k',local(e.v)+' · '+e.equipo); add('ph',NOMBRE[e.fase]); add('',e.titulo);
+  add('k','Aviso '+e.aviso.slice(-5)+' · evento '+e.evento+' · '+e.grav+(e.id?' · '+e.id:''));
+  tip.hidden=false; move(ev);
+}
+function move(ev){
+  const r = ev.clientX!=null ? {x:ev.clientX,y:ev.clientY} : (()=>{const b=ev.target.getBoundingClientRect();return {x:b.right,y:b.bottom};})();
+  const w=tip.offsetWidth, h=tip.offsetHeight;
+  tip.style.left=Math.max(8,Math.min(window.innerWidth-w-8,r.x+14))+'px';
+  tip.style.top=Math.max(8,Math.min(window.innerHeight-h-8,r.y+14))+'px';
+}
+function hide(){tip.hidden=true;}
+
+vict.forEach((v,i)=>{
+  const yc = TOP + i*ROW + ROW/2;
+  if(i%2===0) el('rect',{x:0,y:TOP+i*ROW,width:W,height:ROW,fill:'var(--grid)',opacity:.35},svg);
+  const u=el('text',{x:8,y:yc-3,class:'t-user'},svg); u.textContent=local(v.victima);
+  const s=el('text',{x:8,y:yc+13,class:'t-sub'},svg); s.textContent=v.equipo+' · '+v.sede;
+  const evs=v.eventos.map(e=>({...e,v:v.victima,equipo:v.equipo,m:t(e.aviso)}));
+  // ventaja AUTO-06
+  const c=evs.find(e=>e.fase==='COMPROMISO'), k=evs.find(e=>e.grav==='CRITICO');
+  if(c&&k){
+    el('line',{x1:x(c.m),x2:x(k.m),y1:yc+12,y2:yc+12,stroke:'var(--compromiso)','stroke-width':5,'stroke-linecap':'round',opacity:.45},svg);
+    const g=el('text',{x:(x(c.m)+x(k.m))/2,y:yc+24,'text-anchor':'middle',class:'t-gain'},svg); g.textContent='+'+(k.m-c.m)+' min';
+  }
+  el('line',{x1:x(evs[0].m),x2:x(evs[evs.length-1].m),y1:yc,y2:yc,stroke:'var(--ink-3)','stroke-width':2,opacity:.5},svg);
+  evs.forEach(e=>{
+    const g=el('g',{class:'hit',tabindex:0,role:'img','aria-label':`${local(e.v)}, ${NOMBRE[e.fase]}, aviso ${e.aviso.slice(-5)}`},svg);
+    el('circle',{cx:x(e.m),cy:yc,r:14,fill:'transparent'},g);
+    const grp=GRUPO[e.fase], X=x(e.m);
+    if(grp==='entrada') el('circle',{cx:X,cy:yc,r:6.5,fill:'var(--entrada)',stroke:'var(--panel)','stroke-width':2,class:'mk'},g);
+    else if(grp==='compromiso') el('rect',{x:X-5.5,y:yc-5.5,width:11,height:11,transform:`rotate(45 ${X} ${yc})`,fill:'var(--compromiso)',stroke:'var(--panel)','stroke-width':2,class:'mk'},g);
+    else el('rect',{x:X-6,y:yc-6,width:12,height:12,fill:'var(--impacto)',stroke:'var(--panel)','stroke-width':2,class:'mk'},g);
+    g.addEventListener('mouseenter',ev=>show(ev,e)); g.addEventListener('mousemove',move); g.addEventListener('mouseleave',hide);
+    g.addEventListener('focus',ev=>show(ev,e)); g.addEventListener('blur',hide);
+  });
+  // estado del bloqueo
+  const b=v.bloqueo; const last=x(evs[evs.length-1].m);
+  if(b){
+    const lbl=(b.confirmado?'bloqueado':'en cola')+' · '+(b.origen==='MANUAL'?'manual':b.regla);
+    const tx=el('text',{x:last+14,y:yc+4,class:'t-chip'},svg); tx.textContent=lbl;
+  }
+});
+// fila prevista
+{
+  const i=vict.length, yc=TOP+i*ROW+ROW/2;
+  const u=el('text',{x:8,y:yc-3,class:'t-user',opacity:.6},svg); u.textContent='siguiente';
+  const tarde = ahora > siguiente + 30;
+  const s=el('text',{x:8,y:yc+13,class:'t-sub'},svg); s.textContent=tarde?'no llegó · Infra aisló a las 5:30':'prevista por el ritmo medio';
+  const X=x(siguiente);
+  el('circle',{cx:X,cy:yc,r:7,fill:'none',stroke:'var(--entrada)','stroke-width':2,'stroke-dasharray':'3 2'},svg);
+  const tx=el('text',{x:X+12,y:yc+4,class:'t-axis'},svg); tx.textContent='≈ '+hhmm(siguiente)+(tarde?' · no llegó':'');
+}
+
+// ---- tabla
+const tb=document.querySelector('#tabla tbody'); let n=0;
+vict.forEach(v=>v.eventos.forEach(e=>{
+  n++; const tr=document.createElement('tr');
+  [local(v.victima),e.aviso.slice(-5),e.evento,NOMBRE[e.fase],e.titulo,e.grav,e.id||'—'].forEach((c,j)=>{const td=document.createElement('td');td.textContent=c;if([1,2,6].includes(j))td.className='mono';tr.appendChild(td);});
+  tb.appendChild(tr);
+}));
+document.getElementById('t-n').textContent=n+' alertas';
+</script>

@@ -26,7 +26,7 @@ from psycopg.rows import dict_row
 
 ROOT = Path(__file__).resolve().parents[2]
 SALIDA = Path(__file__).resolve().parent / "datos.json"
-EXCEL = Path("/home/noe/Documents/Proyectos/Analisis_economico_Sampol.xlsx")
+EXCEL = ROOT.parent / "Analisis_economico_Sampol.xlsx"   # carpeta del proyecto, junto al repo
 load_dotenv(ROOT / ".env")
 
 NS = {"m": "http://schemas.openxmlformats.org/spreadsheetml/2006/main"}
@@ -197,7 +197,8 @@ def main() -> None:
         libro = leer_excel(excel)
         datos["excel"] = {"fichero": excel.name, "hipotesis": libro.get("Hipótesis", {}),
                           "calculos": libro.get("Cálculos", {}), "comparativa": libro.get("Comparativa", {}),
-                          "mejoras": libro.get("Mejoras", {})}
+                          "mejoras": libro.get("Mejoras", {}), "resumen": libro.get("Resumen", {}),
+                          "automatizacion": libro.get("Automatización", {}), "datosbd": libro.get("DatosBD", {})}
     SALIDA.write_text(json.dumps(datos, ensure_ascii=False, indent=1, default=serializable), encoding="utf-8")
     print(f"datos.json: {len(datos['cadena_victimas'])} víctimas, {k['correos_recibidos']} correos, "
           f"ruido real {datos['ruido_real']['pct']:.1%}")
