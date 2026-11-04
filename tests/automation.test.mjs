@@ -150,3 +150,21 @@ for(const [name,mutate] of [
  ['edad SQL vencida',f=>f.rule.antiguedad_max_minutos=1],
  ['petición en infinitivo',f=>f.evidence.cuerpo_correo_raw+=' Solicito bloquear esa cuenta.']
 ])test('SQL: '+name,()=>{const f=sqlFixture();mutate(f);assert.equal(assess(f).eligible,false);});
+
+function chainFixture(){const f=sqlFixture();f.action.regla='AUTO-06';f.rule.regla_id='AUTO-06';f.rule.objetivo='USUARIO';f.rule.phaseMatches=true;f.rule.peligrosidades=[];f.alert.soc_peligrosidad='ALTO';return f;}
+function manualFixture(){const f=sqlFixture();f.action.origen='MANUAL';f.action.regla='MANUAL:D-007';f.rule={regla_id:'MANUAL:D-007',manualDecisionApproved:true,min_alertas:1};return f;}
+test('SQL AUTO-06 admite compromiso no crítico con decisión y fase vinculadas',()=>assert.equal(assess(chainFixture()).eligible,true));
+test('SQL MANUAL:D-007 requiere decisión persistida, no una petición del correo',()=>assert.equal(assess(manualFixture()).eligible,true));
+for(const make of [chainFixture,manualFixture])for(const [name,change] of [
+ ['original alterado',f=>f.evidence.eml_raw+='alterado'],['autenticidad ausente',f=>f.evidence.autenticacion_verificada=false],
+ ['servidor',f=>f.alert.equipo_afectado='srv-madrid-001'],['orden en cuerpo',f=>f.evidence.cuerpo_correo_raw+=' bloquea a alguien'],
+ ['liberación',f=>f.action.accion='LIBERAR'],['IP',f=>f.action.ip='198.51.100.1'],['duplicado',f=>f.alert.es_duplicada=true]
+])test(make.name+': rechaza '+name,()=>{const f=make();change(f);assert.equal(assess(f).eligible,false);});
+test('AUTO-06 sin fase o decisión y manual sin aprobación o con otra regla no pasan',()=>{
+ for(const change of [f=>f.rule.phaseMatches=false,f=>f.rule.sqlDecisionApproved=false]){const f=chainFixture();change(f);assert.equal(assess(f).eligible,false);}
+ for(const change of [f=>f.rule.manualDecisionApproved=false,f=>f.action.regla='MANUAL:OTRA']){const f=manualFixture();change(f);assert.equal(assess(f).eligible,false);}
+});
+for(const make of [chainFixture,manualFixture])test(make.name+': preserva secuencia durable y verificación',async()=>{
+ const h=harness(),f=make();h.store.context=async()=>({alert:f.alert,evidence:f.evidence,rule:f.rule});
+ const result=await processAction(f.action,{...h.opts(),settings:f.settings});assert.equal(result.outcome,'verified');assert.deepEqual(h.events,['get','committed_claim','post','finish:acknowledged','get','finish:verified']);
+});
