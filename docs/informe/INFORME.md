@@ -1,6 +1,6 @@
 # Informe final · Equipo 2 · Reto SOC Sampol (Hackathon FP 2027)
 
-*Generado el 04/11/2026 04:59 (hora de Madrid) a partir de la base de datos del equipo, el buzón del reto y el análisis económico. Origen de cada cifra: **[D]** dato del director · **[BD]** base de datos · **[H]** hipótesis del equipo.*
+*Generado el 04/11/2026 05:16 (hora de Madrid) a partir de la base de datos del equipo, el buzón del reto y el análisis económico. Origen de cada cifra: **[D]** dato del director · **[BD]** base de datos · **[H]** hipótesis del equipo.*
 
 ## 1. Resumen ejecutivo
 - **Qué ha pasado.** Una intrusión ha saltado de cuenta en cuenta: **11 cuentas `*moreno`** en **11 equipos de 6 sedes** (Barcelona, Bilbao, Madrid, Palma, Sevilla, Valencia), una nueva cada ~74 min. Todas llegan a la fase de impacto: ficheros alterados o perdidos. En paralelo, el director informa de un ransomware con **doble extorsión**, **18 GB enviados a una IP externa**, copias de seguridad debilitadas y un **documento de pagos manipulado**.

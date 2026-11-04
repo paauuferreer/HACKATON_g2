@@ -282,3 +282,53 @@ plantilla = (DIR / "plantilla_web.html").read_text(encoding="utf-8")
 datos_web = json.dumps(web, ensure_ascii=False).replace("</", "<\\/")
 (DIR / "informe_web.html").write_text(plantilla.replace("__DATA__", datos_web), encoding="utf-8")
 print("informe_web.html listo")
+
+# ---------------------------------------------------------------- ESTADO.md (coordinación con ChatGPT/Codex)
+COORD = DIR.parent / "coordinacion"
+api, ing = d.get("api", {}), d.get("ingesta", {})
+pendientes = [linea for linea in evidencias.splitlines()
+              if linea.startswith("|") and ("Sin responder" in linea or "no enviada" in linea)]
+por_estado = {}
+for a in d["acciones"]:
+    por_estado.setdefault((a["estado"], a["origen"]), []).append(a["usuario_objetivo"] or a["ip"])
+E = []
+e = E.append
+e("# Estado compartido del Equipo 2")
+e(f"\n*Generado automáticamente el {d['generado']} (hora de Madrid) con `docs/informe/generar_informe.py`. "
+  "**Leer antes de cada tarea.** No editar a mano: se regenera con cada «actualiza».*\n")
+e("## Ahora mismo")
+e(f"- **API de bloqueo:** GET `/equipo-2/bloqueos` → **{api.get('http')}** ({api.get('detalle', '')}). "
+  + ("Clave revocada: no se puede ejecutar ningún bloqueo." if api.get("http") == 401 else ""))
+e(f"- **Ingesta:** último correo guardado a las {str(ing.get('ultima_insercion', ''))[11:16]} "
+  f"({int(ing.get('min_sin_ingesta') or 0)} min sin correos nuevos en la BD). "
+  "El cron de `postgres-sync` no se ejecuta solo: lanzar *Run workflow* si hace falta.")
+e(f"- **BD:** migraciones 001-{max(m['version'][:3] for m in d['migraciones'])} aplicadas en Azure. "
+  f"{k['correos_recibidos']} correos, {k['alertas_unicas']} alertas únicas, {k['duplicadas']} duplicadas, "
+  f"{k['malformados']} malformados, {k['sospechosos']} sospechosos.")
+e(f"- **Cadena de ransomware:** {n_vict} cuentas *moreno en {n_sedes} sedes, todas en fase de impacto. "
+  f"Siguiente estimada hacia las {str(d['prediccion'].get('siguiente_victima_estimada_aviso', ''))[11:16]}.")
+e("\n## Cola de bloqueos (`acciones_bloqueo`)")
+e("| Estado | Origen | Objetivos |\n|---|---|---|")
+for (estado, origen), objs in sorted(por_estado.items()):
+    e(f"| {estado} | {origen} | {', '.join(o for o in objs if o)} |")
+e("\nLas filas `AUTOMATICO` las crean AUTO-05/AUTO-06. Las `MANUAL` (regla `MANUAL:D-007`) son decisiones humanas registradas.")
+e("\n## Directrices del director pendientes")
+e("| Hora | Asunto | Hechos | Estado |\n|---|---|---|---|")
+for linea in pendientes:
+    e(linea)
+e("\n## Tareas abiertas")
+e("| Quién | Tarea | Referencia |\n|---|---|---|")
+for quien, tarea, ref in [
+    ("Equipo (persona)", "Conseguir la clave nueva de la API por un canal seguro; ponerla en `.env` y en el secreto `BLOCK_API_KEY`", "WEB-006, INFORME §6"),
+    ("ChatGPT (web)", "Ejecutor en modo sql: aceptar AUTO-06 y MANUAL:D-007 como AUTO-05", "BD-014 c"),
+    ("ChatGPT (web)", "Pantallas «Cadena» (v_cadena_*) y «Costes» (docs/informe/web.json)", "BD-014 b"),
+    ("ChatGPT (web)", "Redactar y enviar las directrices pendientes; registrarlas en docs/directrices.md", "BD-014 d"),
+    ("Claude (BD)", "Con cada «actualiza»: datos, informe, ESTADO.md y revisión de los PR y mensajes WEB", "BD-014"),
+    ("Pau", "Revisar y fusionar el PR de BD → main", "PR bd/postgres-fuente-unica"),
+]:
+    e(f"| {quien} | {tarea} | {ref} |")
+e("\n## Enlaces")
+e("- Informe (web): https://claude.ai/artifact/G9QhSBEQB1MfxHjh9RzMuu · Línea temporal: https://claude.ai/artifact/GmBeD6yWTeRWvt9sNW81m9 (privados; pedir acceso al responsable de BD)")
+e("- Informe completo: `docs/informe/INFORME.md` · Evidencias del director: `docs/informe/evidencias.md` · Contrato de BD: `docs/coordinacion/CONTRATO_BD.md`")
+(COORD / "ESTADO.md").write_text("\n".join(E) + "\n", encoding="utf-8")
+print("ESTADO.md listo")

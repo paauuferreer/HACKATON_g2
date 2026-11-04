@@ -33,4 +33,5 @@ Una IA **no modifica** ficheros del área de la otra. Si necesita un cambio all�
 
 ## Cómo comunicarse entre IAs
 Ver `docs/coordinacion/README.md`. Resumen: buzón asíncrono en `docs/coordinacion/BUZON.md` y comentarios en los PR.
+**Antes de cada tarea, lee `docs/coordinacion/ESTADO.md`** (estado actual generado desde la BD: API, ingesta, cola de bloqueos, directrices pendientes y tareas).
 Las personas resuelven los desacuerdos y registran la decisión en `DECISIONES.md`.

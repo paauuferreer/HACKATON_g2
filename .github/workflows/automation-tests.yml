@@ -1,0 +1,48 @@
+name: Probar automatización segura
+on:
+  push:
+    branches: ['web/**']
+    paths: ['soc/**', 'tests/automation*.mjs', '.github/workflows/automation-tests.yml']
+  pull_request:
+    paths: ['soc/**', 'tests/automation*.mjs', '.github/workflows/automation-tests.yml']
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test tests/automation.test.mjs
+  postgres:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: automation_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: node --test tests/automation-db.test.mjs tests/automation-runtime.test.mjs
+        env:
+          TEST_PG_URL: postgres://test:test@localhost:5432/automation_test
+      - run: node --test tests/automation-contract.test.mjs
+        env:
+          TEST_PG_URL: postgres://test:test@localhost:5432/automation_test

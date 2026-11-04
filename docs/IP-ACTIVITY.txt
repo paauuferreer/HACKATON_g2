@@ -1,0 +1,28 @@
+ACTIVIDAD DE IP — FUNCIONALIDAD INDEPENDIENTE
+
+Abrir «Actividad de IP» en el menú de Hackapol. En GitHub Pages se utiliza
+la sesión privada existente; no se publican correos ni credenciales.
+
+Disponible:
+- Mapa de calor por día y hora, en Europe/Madrid.
+- Intervalo de hasta 93 días; últimos 14 días disponibles por defecto.
+- Fecha del evento o recepción del correo, sin mezclar ambas fechas.
+- Filtro IPv4/IPv6, ranking de las 15 IP con más alertas y detalle por franja.
+- CSV del resultado y actualización con la lectura periódica de la web.
+
+Una alerta cuenta una vez en el mapa, aunque mencione varias IP. En el
+ranking cuenta una vez para cada IP mencionada. Se excluyen duplicados,
+falsas alarmas y mensajes marcados «No es alerta». Las fechas ausentes y
+las alertas sin IP válida se explican en la vista. No se reconstruyen IP
+malformadas. Durante el cambio horario, la hora repetida comparte celda.
+El volumen de menciones no identifica por sí mismo una IP maliciosa.
+
+Esta entrega consulta el histórico de la aplicación que ya está operativa.
+No incorpora la migración pendiente a PostgreSQL ni activa contenciones.
+El endpoint GET /api/soc?view=ip-activity acepta from, to, ip y basis
+(event/received), con la misma autenticación privada que el resto del SOC.
+
+Verificación:
+node --import tsx --test tests/ip-activity.test.mjs tests/service.test.ts tests/pages-protocol.test.ts
+node node_modules/typescript/bin/tsc --noEmit
+npm run build:pages

@@ -1,0 +1,55 @@
+API POSTGRESQL PUBLIC — VALIDACIÓN, NO SUSTITUYE TODAVÍA PRODUCCIÓN
+
+Raíz de proyecto Vercel: services/postgres-api
+Framework: Other. Runtime Node.js 22. Build: ninguno.
+Instalación: npm ci --ignore-scripts
+Rutas: GET /api/soc (alias /soc), GET /api/health (alias /health).
+
+Variables de servidor: PGHOST, PGPORT, PGDATABASE, PGUSER, PGPASSWORD,
+SOC_BACKEND_TOKEN (aleatorio de al menos 32 caracteres), READER_EMAILS,
+APPROVER_EMAILS y OUTLOOK_MAILBOX. Ejemplo sin valores sensibles en .env.example.
+Guardar credenciales solo como secretos del alojamiento; no usar prefijos públicos.
+La API recibe Authorization: Bearer <SOC_BACKEND_TOKEN> y X-SOC-Actor con el
+correo autenticado por el servidor Sites, nunca un actor decidido por el navegador.
+Rechaza solicitudes sin autenticación, usuarios no autorizados y cabeceras Origin.
+El secreto de servicio no permite acceso si falta un actor de la lista autorizada.
+
+Esta fase sirve exclusivamente para validar la lectura real desde las vistas v_*.
+No ejecuta clasificación en JavaScript: conserva las categorías SQL y representa
+P1/P2/P3/P4 como Crítica/Alta/Media/Baja, mostrando por separado la peligrosidad.
+Lee las estadísticas y el listado dentro de una transacción REPEATABLE READ READ ONLY.
+La conexión también impone read-only por defecto. No dispone de clave de bloqueos.
+No hay fallback a Sites si falla PostgreSQL, ni logs con contenido de correos.
+
+/health distingue dashboardReady (vistas mínimas presentes) de productionReady
+(false hasta completar el contrato). El listado contiene alertas únicas, no todos
+los correos de bandeja. operations/audit están vacíos con capabilities desactivadas;
+no interpretar ese resultado como ausencia de operaciones o historial en la BD.
+Originales, revisiones, bloqueos e ingesta todavía no se sirven por este backend.
+
+NO configurar SOC_BACKEND_URL en Sites apuntando aquí: además de /soc, esa variable
+redirige /ingest. El traspaso a producción depende de M-002 en docs/coordinacion/BUZON.md,
+de pruebas de escritura/contención sin operaciones reales y de revisión humana del PR.
+Se mantiene intacta la ingesta Power Automate y la sincronización de GitHub Actions.
+
+Pruebas: npm test
+Local: exportar variables y npm start (127.0.0.1:8090).
+El cliente HTTP debe enviar la clave y el actor. No incluirlos en URL ni capturas.
+Las pruebas reales se realizan en solo lectura y muestran únicamente contadores.
+
+DESPLIEGUE VERIFICADO 03/11/2026
+Proyecto Vercel: hackapol-postgres-api, equipo Man (man-d650).
+URL de servicio: https://hackapol-postgres-api.vercel.app
+Despliegue: dpl_G4jrVzXMvibbftoVLweLmhAMhdJj, código 6111ac2.
+Publicado mediante Vercel Drop; no hay despliegue automático desde GitHub.
+Los nueve valores de entorno están guardados como secretos de Production.
+El ZIP de despliegue contiene solo código, sin variables ni credenciales.
+
+Prueba HTTPS desde el cliente al servicio desplegado, con lectura real desde Azure:
+- GET /health: 200, dashboardReady=true, productionReady=false, sin vistas faltantes
+  para esta fase de lectura; las capacidades pendientes siguen desactivadas.
+- GET /soc: 200, 103 correos, 90 alertas únicas listables; 87 sin NO_SOC/falsas alarmas.
+- Sin clave o con clave incorrecta: 401. Actor no permitido u Origin de navegador: 403.
+- POST /soc autenticado: 405; no se ejecuta ninguna escritura.
+La raíz / no sirve una página: esta es una API para llamadas entre servidores.
+La web actual sigue en Sites. M-002 continúa pendiente; no activar SOC_BACKEND_URL.

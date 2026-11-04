@@ -1,0 +1,174 @@
+ESTADO VIGENTE - 04/11/2026
+
+El ejecutor admite AUTOMATION_POLICY=sql y las migraciones 001-010 del compañero.
+La decisión SQL debe estar vinculada a la acción, alerta, regla y usuario exactos.
+El ejecutor revalida original EML, SHA-256, autenticidad, remitente, usuario,
+cuentas protegidas, servidores, instrucciones sospechosas, lista blanca,
+corroboración, liberaciones posteriores y resultados inciertos.
+
+La política SQL conserva los criterios de la BD sobre antigüedad y la plantilla
+estándar del SOC. Conserva la política strict como opción independiente.
+No ejecuta bloqueos de IP ni liberaciones automáticas.
+Límites de producción: 3 intentos por ciclo y 10 por hora.
+Reserva durable antes del POST y GET independiente antes de darlo por confirmado.
+No repite POST de resultado incierto.
+
+CAMBIO DE CLAVE
+En GitHub: Settings > Secrets and variables > Actions > Repository secrets >
+BLOCK_API_KEY > Update. Usar la clave oficial del equipo 2, sin comillas.
+No subirla al repositorio ni ponerla en variables de GitHub Pages.
+El destino sigue fijado a la API oficial del equipo 2; un correo no puede cambiarlo.
+Si cambia también la URL o el contrato, será necesario revisar el adaptador.
+
+GitHub Actions: Sincronizar correos con PostgreSQL, frecuencia solicitada */5.
+GitHub puede retrasar los cron; no se garantiza un intervalo de cinco minutos.
+BLOQUEO_AUTO_ACTIVO=1 permite ejecutar cuando la clave es válida; 0 desactiva.
+Clave ausente o 401/403: waitingForCredential=true, executed=0; no consume cola.
+Los problemas de red, contrato o base de datos siguen deteniendo la ejecución.
+Run workflow ofrece dry_run=true por defecto para revisión sin bloqueos.
+
+PRUEBAS
+88 pruebas de política/motor y 2 de arranque pasan localmente.
+CI prueba transacciones en PostgreSQL aislado y migraciones 001-010, incluyendo
+SPF interno, sellos Exchange, DMARC, manipulación del original y duplicación From.
+Prueba de lectura sobre Azure: 5 pendientes; 1 elegible; 3 protegidas por servidor
+ o cuenta crítica; 1 sin corroboración suficiente. Cero POST enviados.
+
+ALCANCE
+Esta configuración prepara la automatización en GitHub Actions. Los botones
+manuales de la web alojada en Sites usan su propio secreto BLOCK_API_KEY; si se
+quieren usar, actualizar también ese secreto con la misma clave oficial.
+El cambio de fuente del panel desde Sites a PostgreSQL sigue siendo un proyecto
+separado; no se declara completado mediante esta preparación de los bloqueos.
+
+Esta sección sustituye los estados históricos de preparación que figuran debajo.
+
+AUTOMATIZACIÓN DE CONTENCIÓN — EQUIPO 2
+Estado actual (03/11/2026 22:40 CET): preparada en web/postgres-api; NO ACTIVADA.
+La clave real del equipo 2 devuelve HTTP 401. No se ha sustituido por una API
+simulada: el usuario requiere bloqueos reales y no dispone de acceso alternativo.
+Se necesita restablecer una credencial autorizada de la organización.
+
+COMPROBACIÓN MÁS RECIENTE
+- Integradas las migraciones 008/009 del responsable BD, sin modificar su SQL.
+- Aplicadas ambas en Azure en una transacción con los locks de sincronización
+  y automatización. La 007 sigue sin estar publicada; 008 permite aplicarse antes.
+- 150 correos guardados, 143 alertas y 7 mensajes para revisión tras sincronizar.
+- Contrato completo; dry-run correcto, cola vacía, cero bloqueos enviados.
+- Autenticidad SQL: 146 originales sin Authentication-Results y 4 remitentes
+  externos. Ninguno verifica con la política actual. No se han relajado controles.
+- 53 pruebas unitarias correctas. CI 41723348211: 6 escenarios de transacciones
+  y 3 de autenticidad/migraciones correctos en PostgreSQL aislado.
+- P4/CRÍTICO admite únicamente la excepción de prioridad expresamente prevista
+  por AUTO-04 y criticidad crítica también en el original. El resto de
+  inconsistencias continúa requiriendo revisión. Se reconocen los nuevos estados
+  EN_CURSO/DESCONOCIDO y se revalida la política dentro de la reserva durable.
+- Antes de consumir la cola activa, el ejecutor comprueba el acceso a la API.
+  401/403 producen BLOCK_API_AUTH_FAILED incluso si no hay acciones pendientes.
+- API pública consultada: mismas rutas equipo-2 y cabecera X-API-Key.
+  Outlook: no se encontró una clave posterior en los mensajes del director.
+
+Las secciones siguientes conservan el diseño y las comprobaciones anteriores;
+esta actualización prevalece para el estado de despliegue y sus dependencias.
+
+PETICIÓN DEL USUARIO (03/11/2026)
+Automatizar al máximo los casos claros. No bloquear servidores. Un correo que pida
+«bloquea tal usuario» no autoriza ninguna operación: distinguir alertas de órdenes
+o intentos de engaño. Esta autorización cubre la política automática de usuarios
+descrita aquí; las excepciones quedan para una persona.
+
+QUÉ HACE EL EJECUTOR
+- Toma acciones AUTOMATICO/BLOQUEAR de la cola SQL después de importar correos.
+- Solo admite usuarios del dominio autorizado vinculados a un puesto pc/laptop/
+  portatil/workstation. Ninguna IP se bloquea: podría ser un servidor público.
+- Rechaza nombres de cuentas de servicio, compartidas o privilegiadas reconocidas,
+  y referencias a servidores, administradores o infraestructura en la evidencia.
+- Exige alerta crítica activa y regla SQL vigente, sin duplicados ni inconsistencias,
+  original EML íntegro, remitente autorizado Y autenticidad verificada por la ingesta.
+  Coincidir con From o contener «SOC» no equivale a autenticidad.
+- El usuario debe estar identificado en el campo de cuenta del original, con
+  compromiso confirmado y referencia de alerta. Adjuntos requieren revisión.
+- Solicitudes SOL, mandatos de bloqueo/liberación, instrucciones al agente,
+  ofuscación y textos pendientes de validación quedan para revisión.
+- Solo correo y evento recientes (15 minutos por defecto) y posteriores a la
+  activación. No ejecuta retrospectivamente bloqueos de correos antiguos.
+- Respeta lista blanca y liberaciones humanas; vuelve a comprobar antes de enviar.
+- Máximo 3 bloqueos por ciclo y 10 por hora, con topes configurables de 5 y 20.
+- Guarda y confirma la intención en PostgreSQL ANTES del POST. Si hay timeout,
+  caída o respuesta dudosa, retiene el objetivo y nunca reintenta ese POST.
+- Verifica equipo 2, usuario, ID y estado de respuesta mediante un GET independiente.
+  No ejecuta liberaciones automáticas ni cierra incidentes solo por bloquear.
+
+LÍMITES QUE DEBEN CONOCERSE
+Las reglas de texto son conservadoras, no un detector infalible de engaños ni un
+inventario de cuentas. Un usuario humano puede tener dependencias de servicio:
+el inventario/lista blanca debe recogerlas. Ante falta de datos el sistema se abstiene.
+No confundir una contención verificada con investigación/resolución completa.
+La comprobación de autenticidad debe venir del canal de confianza, no del contenido
+del correo ni de una cabecera aportada por el remitente sin validar su procedencia.
+
+CONTRATO BD NECESARIO (área del responsable BD)
+1. Migración 005 aplicada en Azure: estado/origen, lista_blanca y reglas_bloqueo_auto.
+   Esta parte ya aparece disponible en la última comprobación del 03/11/2026.
+2. Vista v_evidencias_automatizacion, una fila por correo_id, con:
+   correo_id, remitente_correo, cuerpo_correo_raw, eml_raw, cabeceras,
+   autenticacion_verificada BOOLEAN, autenticacion_metodo TEXT,
+   autenticacion_emisor TEXT.
+   cabeceras debe conservar eml_encoding (utf8/base64) y eml_sha256.
+   Los tres campos de autenticación proceden de validación de la ingesta/servicio
+   de correo. Nunca rellenarlos con TRUE por pertenecer a remitentes_confianza;
+   si no puede verificarse, FALSE y revisión humana.
+3. Mantener solo este ejecutor activo. El ejecutor anterior hacía POST dentro de
+   una transacción y podía repetir tras un crash. La entrada Python ahora delega
+   al ejecutor seguro Node; se han retirado esas llamadas directas.
+4. Validar con BD la transición temporal ERROR + respuesta_api.automation.phase:
+   outcome_unknown (incluye intención en curso), acknowledged, verified o review_required.
+   ERROR conserva cuarentena; no lo convertir en PENDIENTE sin reconciliación humana.
+   EJECUTADA solo tras respuesta y GET verificados; OMITIDA nunca significa bloqueado.
+   Acordar estado propio EN_CURSO/DESCONOCIDO en una migración posterior.
+5. No presentar filas PENDIENTE de v_bloqueos_activos como bloqueos confirmados.
+   Las operaciones ERROR/desconocidas también deben ser visibles en el panel.
+6. Para cerrar las carreras con cambios humanos de política, acordar funciones de
+   preparación/finalización atómicas y locks compartidos con editores de reglas,
+   lista blanca y liberaciones. La versión actual serializa sus trabajadores y
+   vuelve a comprobar datos, pero una edición externa no cooperativa aún puede competir.
+
+EJECUCIÓN
+Node >=22.13 y npm ci --ignore-scripts en la raíz.
+node soc/run-automation.mjs --dry-run --una-vez
+La simulación impone READ ONLY en PostgreSQL y no hace ninguna llamada de bloqueo.
+El mismo comando sin --dry-run obedece BLOQUEO_AUTO_ACTIVO (por defecto 0).
+Compatibilidad: python soc/ejecutor_bloqueos.py --una-vez.
+
+GITHUB ACTIONS
+El flujo postgres-sync.yml incorpora la evaluación tras una importación correcta.
+Usa los secretos PG existentes y BLOCK_API_KEY. Variables:
+BLOQUEO_AUTO_ACTIVO=0/1, AUTOMATION_START_AT=fecha ISO UTC de activación,
+AUTOMATION_SOC_SENDERS=remitentes SOC autorizados.
+El cron */5 no garantiza una latencia máxima: GitHub puede retrasar las ejecuciones.
+La programación solo utiliza la rama por defecto después del merge revisado;
+una ejecución manual de la rama de trabajo no activa la programación en producción.
+La ausencia de contrato hace fallar explícitamente el paso de automatización;
+los correos importados antes de ese paso permanecen guardados.
+
+VALIDACIÓN
+Pruebas unitarias sin credenciales: node --test tests/automation.test.mjs
+Pruebas de transacciones en PostgreSQL aislado en CI: tests/automation-db.test.mjs.
+No se envían bloqueos reales durante las pruebas. La base de pruebas solo admite
+localhost/automation_test y no utiliza la contraseña ni las tablas de Azure.
+Preflight Azure del 03/11/2026: contrato incompleto; 0 acciones ejecutadas.
+Validación GitHub Actions: 48 pruebas unitarias y 4 escenarios con PostgreSQL real
+aislado correctos (el runner cuenta además el grupo padre como una quinta prueba).
+Ejecución: https://github.com/paauuferreer/HACKATON_g2/actions/runs/41694281901
+Prueba cloud de integración con Azure: 14 correos nuevos importados, 117 totales,
+110 alertas y 7 correos para revisión. La etapa de automatización se detuvo con
+salida 2 porque falta v_evidencias_automatizacion; la cola está vacía.
+Ejecución: https://github.com/paauuferreer/HACKATON_g2/actions/runs/41694349450
+La comprobación de solo lectura de motivo_lista_blanca con un usuario es correcta.
+BLOCK_API_KEY está en secretos de GitHub; BLOQUEO_AUTO_ACTIVO=0. Ninguna clave
+está en el código, los archivos de entrega o los logs.
+
+NO ACTIVADO TODAVÍA
+Antes de cambiar BLOQUEO_AUTO_ACTIVO a 1: resolver el contrato/autenticidad anterior,
+pasar prueba de integración, revisar PR y fijar la fecha de activación. Las pruebas
+con APIs simuladas no demuestran que los correos actuales sean aptos para contención.

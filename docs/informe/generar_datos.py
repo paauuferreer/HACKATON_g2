@@ -17,7 +17,10 @@ from datetime import date, datetime
 from decimal import Decimal
 from pathlib import Path
 
+import os
+
 import psycopg
+import requests
 from dotenv import load_dotenv
 from psycopg.rows import dict_row
 
@@ -67,6 +70,18 @@ def reconstruir_ip(ip_raw: str | None) -> str | None:
         if ip_raw.startswith(compacto) and 1 <= len(ip_raw) - len(compacto) <= 3:
             return prefijo + ip_raw[len(compacto):]
     return None
+
+
+def estado_api() -> dict:
+    """Código HTTP de GET /equipo-2/bloqueos con la clave de .env (nunca se guarda ni se imprime la clave)."""
+    base, clave = os.getenv("API_BASE", "").rstrip("/"), os.getenv("API_TOKEN", "")
+    if not base or not clave:
+        return {"http": None, "detalle": "Sin API_BASE o API_TOKEN en .env"}
+    try:
+        r = requests.get(f"{base}/equipo-2/bloqueos", headers={"X-API-Key": clave}, timeout=15)
+        return {"http": r.status_code, "detalle": "OK" if r.ok else r.text[:120]}
+    except requests.RequestException as e:
+        return {"http": None, "detalle": type(e).__name__}
 
 
 def serializable(o):
@@ -135,6 +150,10 @@ CONSULTAS = {
                                FROM decisiones_bloqueo_auto d WHERE d.regla_id = 'AUTO-06' AND d.decision = 'DESCARTAR'
                                ORDER BY 1""",
     "malformados": "SELECT count(*) AS total, count(*) FILTER (WHERE es_sospechoso) AS sospechosos FROM correos_malformados",
+    "ingesta": """SELECT max(fecha_recepcion_bd) AT TIME ZONE 'Europe/Madrid' AS ultima_insercion,
+                         max(fecha_hora_correo) AT TIME ZONE 'Europe/Madrid' AS ultimo_correo,
+                         round(extract(epoch FROM now() - max(fecha_recepcion_bd)) / 60) AS min_sin_ingesta
+                  FROM bandeja_entrada""",
     "migraciones": "SELECT version, to_char(applied_at AT TIME ZONE 'Europe/Madrid', 'DD/MM HH24:MI') AS aplicada FROM schema_migrations ORDER BY version",
 }
 PATRON_OTROS = ("persistencia dirigida|cambio de cuenta de pago|llamada intenta|cuenta administrativa|"
@@ -151,6 +170,8 @@ def main() -> None:
             params = (PATRON_OTROS,) if nombre == "otros_casos" else None
             datos[nombre] = conn.execute(sql, params).fetchall()
     datos["kpis"] = datos["kpis"][0]
+    datos["ingesta"] = datos["ingesta"][0]
+    datos["api"] = estado_api()
     datos["prediccion"] = datos["prediccion"][0] if datos["prediccion"] else {}
 
     # IPs reconstruidas (sin puntos en el correo original)

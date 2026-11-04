@@ -1,5 +1,5 @@
 {
- "generado": "04/11/2026 04:59",
+ "generado": "04/11/2026 05:16",
  "kpis": {
   "correos_recibidos": 214,
   "alertas_total": 207,
@@ -2130,6 +2130,11 @@
    "sospechosos": 5
   }
  ],
+ "ingesta": {
+  "ultima_insercion": "2026-11-04T04:54:15.366893",
+  "ultimo_correo": "2026-11-04T04:52:36",
+  "min_sin_ingesta": 22.0
+ },
  "migraciones": [
   {
    "version": "001_esquema_alertas.sql",
@@ -2208,6 +2213,10 @@
    "aplicada": "04/11 00:53"
   }
  ],
+ "api": {
+  "http": 401,
+  "detalle": "{\"detail\":\"Contraseña de equipo incorrecta o ausente.\"}"
+ },
  "ips_reconstruidas": {
   "jmoreno@sampol.com": [
    "203.0.113.150"

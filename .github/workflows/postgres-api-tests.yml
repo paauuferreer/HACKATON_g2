@@ -1,0 +1,25 @@
+name: Probar API PostgreSQL
+on:
+  push:
+    branches: ['web/**']
+    paths: ['services/postgres-api/**', '.github/workflows/postgres-api-tests.yml']
+  pull_request:
+    paths: ['services/postgres-api/**', '.github/workflows/postgres-api-tests.yml']
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    defaults:
+      run:
+        working-directory: services/postgres-api
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: services/postgres-api/package-lock.json
+      - run: npm ci --ignore-scripts
+      - run: npm test

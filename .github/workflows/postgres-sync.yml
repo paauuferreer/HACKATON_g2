@@ -3,6 +3,11 @@ on:
   schedule:
     - cron: '*/5 * * * *'
   workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Evaluar sin ejecutar bloqueos
+        type: boolean
+        default: true
 permissions:
   contents: read
 concurrency:
@@ -30,3 +35,18 @@ jobs:
           SOC_SOURCE_URL: https://hackapol-soc-equipo-dos.sampol-1496.chatgpt.site
           SOC_SOURCE_BEARER: ${{ secrets.SOC_SOURCE_BEARER }}
           SOC_SYNC_TOKEN: ${{ secrets.SOC_SYNC_TOKEN }}
+      - name: Evaluar contención segura después de importar
+        run: node soc/run-automation.mjs --una-vez ${{ inputs.dry_run && '--dry-run' || '' }}
+        env:
+          PGHOST: ${{ secrets.PGHOST }}
+          PGPORT: ${{ secrets.PGPORT }}
+          PGDATABASE: ${{ secrets.PGDATABASE }}
+          PGUSER: ${{ secrets.PGUSER }}
+          PGPASSWORD: ${{ secrets.PGPASSWORD }}
+          BLOCK_API_KEY: ${{ secrets.BLOCK_API_KEY }}
+          BLOQUEO_AUTO_ACTIVO: ${{ vars.BLOQUEO_AUTO_ACTIVO || '0' }}
+          AUTOMATION_POLICY: sql
+          AUTOMATION_MAX_PER_RUN: '3'
+          AUTOMATION_MAX_PER_HOUR: '10'
+          AUTOMATION_START_AT: ${{ vars.AUTOMATION_START_AT }}
+          AUTOMATION_SOC_SENDERS: ${{ vars.AUTOMATION_SOC_SENDERS || 'soc-hackaton@sampol.com' }}
