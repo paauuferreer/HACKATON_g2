@@ -1,111 +1,111 @@
 {
- "generado": "04/11/2026 05:58",
+ "generado": "04/11/2026 09:28",
  "kpis": {
-  "correos_recibidos": 214,
-  "alertas_total": 207,
-  "duplicadas": 14,
-  "alertas_unicas": 193,
+  "correos_recibidos": 257,
+  "alertas_total": 250,
+  "duplicadas": 20,
+  "alertas_unicas": 230,
   "falsas_alarmas": 0,
-  "no_soc": 6,
-  "pendientes": 187,
+  "no_soc": 10,
+  "pendientes": 220,
   "p1": 0,
-  "sin_clasificar": 4,
+  "sin_clasificar": 9,
   "sospechosos": 11,
   "malformados": 7,
   "malformados_pendientes": 7,
-  "bloqueos_ok": 13
+  "bloqueos_ok": 0
  },
  "por_gravedad": [
   {
    "gravedad": "ALTO",
-   "unicas": 106,
-   "duplicadas": 7
+   "unicas": 122,
+   "duplicadas": 12
   },
   {
    "gravedad": "BAJO",
-   "unicas": 6,
+   "unicas": 8,
    "duplicadas": 1
   },
   {
    "gravedad": "CRITICO",
-   "unicas": 34,
+   "unicas": 41,
    "duplicadas": 3
   },
   {
    "gravedad": "INFORMATIVO",
-   "unicas": 17,
+   "unicas": 26,
    "duplicadas": 0
   },
   {
    "gravedad": "MEDIO",
-   "unicas": 30,
-   "duplicadas": 3
+   "unicas": 33,
+   "duplicadas": 4
   }
  ],
  "por_estado": [
   {
    "estado": "NO_SOC",
-   "total": 6
+   "total": 10
   },
   {
    "estado": "EN_REVISION",
-   "total": 38
+   "total": 45
   },
   {
    "estado": "NUEVA",
-   "total": 149
+   "total": 175
   }
  ],
  "por_clase": [
   {
    "clase": "Otros",
-   "unicas": 42,
-   "ruido": 14
+   "unicas": 49,
+   "ruido": 18
   },
   {
    "clase": "Compromiso de la información",
-   "unicas": 27,
-   "ruido": 0
-  },
-  {
-   "clase": "Intento de intrusión",
-   "unicas": 24,
-   "ruido": 0
+   "unicas": 32,
+   "ruido": 1
   },
   {
    "clase": "Intrusión",
-   "unicas": 22,
+   "unicas": 27,
    "ruido": 2
+  },
+  {
+   "clase": "Intento de intrusión",
+   "unicas": 25,
+   "ruido": 0
   },
   {
    "clase": "Contenido dañino",
-   "unicas": 19,
-   "ruido": 2
+   "unicas": 23,
+   "ruido": 3
   },
   {
    "clase": "Disponibilidad",
-   "unicas": 18,
+   "unicas": 19,
    "ruido": 3
   },
   {
    "clase": "Obtención de información",
-   "unicas": 14,
-   "ruido": 1
+   "unicas": 18,
+   "ruido": 2
   },
   {
    "clase": "Fraude",
-   "unicas": 13,
-   "ruido": 0
+   "unicas": 17,
+   "ruido": 1
   },
   {
    "clase": "Vulnerable",
-   "unicas": 9,
+   "unicas": 10,
    "ruido": 1
   },
   {
    "clase": "Sin clasificar",
-   "unicas": 4,
-   "ruido": 8
+   "unicas": 9,
+   "ruido": 15
   },
   {
    "clase": "Contenido abusivo",
@@ -116,37 +116,37 @@
  "por_sede": [
   {
    "sede": "Palma",
-   "total": 38,
-   "criticas": 10
-  },
-  {
-   "sede": "Barcelona",
-   "total": 32,
-   "criticas": 9
-  },
-  {
-   "sede": "Sevilla",
-   "total": 30,
-   "criticas": 6
-  },
-  {
-   "sede": "Valencia",
-   "total": 30,
-   "criticas": 3
-  },
-  {
-   "sede": "Bilbao",
-   "total": 30,
-   "criticas": 4
+   "total": 44,
+   "criticas": 11
   },
   {
    "sede": "Madrid",
-   "total": 28,
-   "criticas": 2
+   "total": 39,
+   "criticas": 3
+  },
+  {
+   "sede": "Sevilla",
+   "total": 35,
+   "criticas": 7
+  },
+  {
+   "sede": "Barcelona",
+   "total": 35,
+   "criticas": 10
+  },
+  {
+   "sede": "Bilbao",
+   "total": 34,
+   "criticas": 5
+  },
+  {
+   "sede": "Valencia",
+   "total": 33,
+   "criticas": 5
   },
   {
    "sede": "Todas",
-   "total": 5,
+   "total": 10,
    "criticas": 0
   }
  ],
@@ -154,18 +154,18 @@
   {
    "franja": "LABORAL",
    "descripcion": "Lunes a viernes laborables, 08:00-17:59",
-   "total": 76,
-   "reales": 73,
-   "criticas": 16,
-   "duplicadas": 6
+   "total": 92,
+   "reales": 88,
+   "criticas": 20,
+   "duplicadas": 9
   },
   {
    "franja": "GUARDIA_TARDE",
    "descripcion": "Lunes a viernes laborables, 18:00-21:59",
-   "total": 7,
-   "reales": 6,
-   "criticas": 0,
-   "duplicadas": 0
+   "total": 18,
+   "reales": 17,
+   "criticas": 3,
+   "duplicadas": 3
   },
   {
    "franja": "FIN_DE_SEMANA_FESTIVO",
@@ -178,8 +178,8 @@
   {
    "franja": "GUARDIA_NOCHE",
    "descripcion": "Todos los días, 22:00-07:59",
-   "total": 110,
-   "reales": 108,
+   "total": 120,
+   "reales": 115,
    "criticas": 18,
    "duplicadas": 8
   }
@@ -252,8 +252,53 @@
   },
   {
    "hora": "2026-10-30 12:00",
-   "total": 10,
+   "total": 11,
    "criticas": 5
+  },
+  {
+   "hora": "2026-10-30 13:00",
+   "total": 5,
+   "criticas": 2
+  },
+  {
+   "hora": "2026-10-30 14:00",
+   "total": 2,
+   "criticas": 0
+  },
+  {
+   "hora": "2026-10-30 15:00",
+   "total": 3,
+   "criticas": 1
+  },
+  {
+   "hora": "2026-10-30 16:00",
+   "total": 3,
+   "criticas": 0
+  },
+  {
+   "hora": "2026-10-30 17:00",
+   "total": 1,
+   "criticas": 1
+  },
+  {
+   "hora": "2026-10-30 18:00",
+   "total": 4,
+   "criticas": 2
+  },
+  {
+   "hora": "2026-10-30 19:00",
+   "total": 4,
+   "criticas": 0
+  },
+  {
+   "hora": "2026-10-30 20:00",
+   "total": 1,
+   "criticas": 1
+  },
+  {
+   "hora": "2026-10-30 21:00",
+   "total": 2,
+   "criticas": 0
   },
   {
    "hora": "2026-11-03 10:00",
@@ -349,6 +394,26 @@
    "hora": "2026-11-04 04:00",
    "total": 1,
    "criticas": 0
+  },
+  {
+   "hora": "2026-11-04 05:00",
+   "total": 2,
+   "criticas": 0
+  },
+  {
+   "hora": "2026-11-04 06:00",
+   "total": 5,
+   "criticas": 0
+  },
+  {
+   "hora": "2026-11-04 07:00",
+   "total": 3,
+   "criticas": 0
+  },
+  {
+   "hora": "2026-11-04 08:00",
+   "total": 1,
+   "criticas": 0
   }
  ],
  "avisos_por_hora": [
@@ -426,7 +491,27 @@
   },
   {
    "hora": "04/11 04:00",
+   "correos": 10
+  },
+  {
+   "hora": "04/11 05:00",
+   "correos": 10
+  },
+  {
+   "hora": "04/11 06:00",
+   "correos": 10
+  },
+  {
+   "hora": "04/11 07:00",
    "correos": 9
+  },
+  {
+   "hora": "04/11 08:00",
+   "correos": 11
+  },
+  {
+   "hora": "04/11 09:00",
+   "correos": 2
   }
  ],
  "cadena_victimas": [
@@ -624,6 +709,24 @@
    "aviso_compromiso": null,
    "aviso_primera_critica": "03:40",
    "min_ganados": null,
+   "estado_bloqueo": "PENDIENTE",
+   "origen_bloqueo": "AUTOMATICO",
+   "bloqueo_confirmado": false
+  },
+  {
+   "orden_victima": 12,
+   "victima": "lmoreno@sampol.com",
+   "equipos": "gw-madrid-212",
+   "sedes": "Madrid",
+   "ips": "19851100161",
+   "num_fases": 6,
+   "fase_maxima": "Impacto (cifrado / pérdida)",
+   "primer_aviso": "04/11 04:09",
+   "primer_evento": "30/10 12:17",
+   "min_desde_anterior": 72.0,
+   "aviso_compromiso": "04:33",
+   "aviso_primera_critica": "05:10",
+   "min_ganados": 37.0,
    "estado_bloqueo": "PENDIENTE",
    "origen_bloqueo": "AUTOMATICO",
    "bloqueo_confirmado": false
@@ -1685,21 +1788,117 @@
    "evento": "30/10 12:41",
    "min_desde_fase_anterior": 13.0,
    "min_desde_inicio_victima": 65.0
+  },
+  {
+   "victima": "lmoreno@sampol.com",
+   "equipo": "gw-madrid-212",
+   "sede": "Madrid",
+   "ip": "19851100161",
+   "fase": "ACCESO_INICIAL",
+   "nombre_fase": "Phishing",
+   "orden_fase": 2,
+   "titulo": "Mensaje con formulario falso de acceso",
+   "gravedad": "ALTO",
+   "id_alerta_soc": "AL-20261030-0091",
+   "aviso": "04/11 04:09",
+   "evento": "30/10 12:17",
+   "min_desde_fase_anterior": null,
+   "min_desde_inicio_victima": 0.0
+  },
+  {
+   "victima": "lmoreno@sampol.com",
+   "equipo": "gw-madrid-212",
+   "sede": "Madrid",
+   "ip": "19851100161",
+   "fase": "COMPROMISO",
+   "nombre_fase": "Cuenta comprometida",
+   "orden_fase": 4,
+   "titulo": "Acceso correcto que la persona titular no reconoce",
+   "gravedad": "ALTO",
+   "id_alerta_soc": "AL-20261030-0092",
+   "aviso": "04/11 04:33",
+   "evento": "30/10 12:43",
+   "min_desde_fase_anterior": 26.0,
+   "min_desde_inicio_victima": 26.0
+  },
+  {
+   "victima": "lmoreno@sampol.com",
+   "equipo": "gw-madrid-212",
+   "sede": "Madrid",
+   "ip": "19851100161",
+   "fase": "EJECUCION",
+   "nombre_fase": "Ejecución / persistencia",
+   "orden_fase": 7,
+   "titulo": "Proceso malicioso detectado en el equipo",
+   "gravedad": "ALTO",
+   "id_alerta_soc": "AL-20261030-0093",
+   "aviso": "04/11 04:58",
+   "evento": "30/10 12:56",
+   "min_desde_fase_anterior": 13.0,
+   "min_desde_inicio_victima": 39.0
+  },
+  {
+   "victima": "lmoreno@sampol.com",
+   "equipo": "gw-madrid-212",
+   "sede": "Madrid",
+   "ip": "19851100161",
+   "fase": "MANDO_CONTROL",
+   "nombre_fase": "Mando y control",
+   "orden_fase": 6,
+   "titulo": "Conexiones periódicas a infraestructura de mando",
+   "gravedad": "CRITICO",
+   "id_alerta_soc": "AL-20261030-0094",
+   "aviso": "04/11 05:10",
+   "evento": "30/10 13:09",
+   "min_desde_fase_anterior": 13.0,
+   "min_desde_inicio_victima": 52.0
+  },
+  {
+   "victima": "lmoreno@sampol.com",
+   "equipo": "gw-madrid-212",
+   "sede": "Madrid",
+   "ip": "19851100161",
+   "fase": "RECOLECCION",
+   "nombre_fase": "Lectura indebida",
+   "orden_fase": 5,
+   "titulo": "Lectura de documentos fuera de los permisos aprobados",
+   "gravedad": "ALTO",
+   "id_alerta_soc": "AL-20261030-0095",
+   "aviso": "04/11 05:23",
+   "evento": "30/10 13:22",
+   "min_desde_fase_anterior": 13.0,
+   "min_desde_inicio_victima": 65.0
+  },
+  {
+   "victima": "lmoreno@sampol.com",
+   "equipo": "gw-madrid-212",
+   "sede": "Madrid",
+   "ip": "19851100161",
+   "fase": "IMPACTO",
+   "nombre_fase": "Impacto (cifrado / pérdida)",
+   "orden_fase": 8,
+   "titulo": "Datos perdidos tras avería de almacenamiento",
+   "gravedad": "ALTO",
+   "id_alerta_soc": "AL-20261030-0096",
+   "aviso": "04/11 05:30",
+   "evento": "30/10 13:35",
+   "min_desde_fase_anterior": 13.0,
+   "min_desde_inicio_victima": 78.0
   }
  ],
  "prediccion": {
-  "victimas": 11,
-  "min_medios_entre_victimas": 48.0,
-  "inicio_ultima_victima": "2026-10-30T11:36:49",
-  "ultima_victima": "vmoreno@sampol.com",
-  "siguiente_victima_estimada_evento": "2026-10-30T12:24:49",
+  "victimas": 12,
+  "min_medios_entre_victimas": 47.0,
+  "inicio_ultima_victima": "2026-10-30T12:17:49",
+  "ultima_victima": "lmoreno@sampol.com",
+  "siguiente_victima_estimada_evento": "2026-10-30T13:04:49",
   "min_medios_entre_avisos": 74.0,
-  "siguiente_victima_estimada_aviso": "2026-11-04T04:11:41"
+  "siguiente_victima_estimada_aviso": "2026-11-04T05:23:45"
  },
  "fases": [
   {
    "fase": "ACCESO_INICIAL",
-   "total": 9
+   "total": 10
   },
   {
    "fase": "CREDENCIALES",
@@ -1707,27 +1906,27 @@
   },
   {
    "fase": "EJECUCION",
-   "total": 12
+   "total": 18
   },
   {
    "fase": "MANDO_CONTROL",
-   "total": 12
+   "total": 13
   },
   {
    "fase": "RECONOCIMIENTO",
-   "total": 15
+   "total": 16
   },
   {
    "fase": "RECOLECCION",
-   "total": 12
+   "total": 14
   },
   {
    "fase": "IMPACTO",
-   "total": 15
+   "total": 18
   },
   {
    "fase": "COMPROMISO",
-   "total": 15
+   "total": 17
   }
  ],
  "decisiones": [
@@ -1735,13 +1934,13 @@
    "regla_id": "AUTO-05",
    "decision": "BLOQUEAR",
    "tipo_objetivo": "USUARIO",
-   "total": 7
+   "total": 10
   },
   {
    "regla_id": "AUTO-05",
    "decision": "RECOMENDAR",
    "tipo_objetivo": "IP",
-   "total": 15
+   "total": 17
   },
   {
    "regla_id": "AUTO-05",
@@ -1753,7 +1952,7 @@
    "regla_id": "AUTO-05",
    "decision": "YA_BLOQUEADO",
    "tipo_objetivo": "USUARIO",
-   "total": 17
+   "total": 18
   },
   {
    "regla_id": "AUTO-06",
@@ -1765,7 +1964,7 @@
    "regla_id": "AUTO-06",
    "decision": "DESCARTAR",
    "tipo_objetivo": "USUARIO",
-   "total": 6
+   "total": 7
   },
   {
    "regla_id": "AUTO-06",
@@ -1776,7 +1975,7 @@
  ],
  "acciones": [
   {
-   "usuario_objetivo": "qgomez@sampol.com",
+   "usuario_objetivo": "jmoreno@sampol.com",
    "ip": null,
    "origen": "AUTOMATICO",
    "regla": "AUTO-05",
@@ -1784,7 +1983,7 @@
    "solicitada": "03/11 22:50"
   },
   {
-   "usuario_objetivo": "jmoreno@sampol.com",
+   "usuario_objetivo": "qgomez@sampol.com",
    "ip": null,
    "origen": "AUTOMATICO",
    "regla": "AUTO-05",
@@ -1888,7 +2087,7 @@
    "solicitada": "04/11 04:54"
   },
   {
-   "usuario_objetivo": "qgomez@sampol.com",
+   "usuario_objetivo": "jmoreno@sampol.com",
    "ip": null,
    "origen": "AUTOMATICO",
    "regla": "AUTO-05",
@@ -1896,7 +2095,7 @@
    "solicitada": "04/11 05:58"
   },
   {
-   "usuario_objetivo": "jmoreno@sampol.com",
+   "usuario_objetivo": "qgomez@sampol.com",
    "ip": null,
    "origen": "AUTOMATICO",
    "regla": "AUTO-05",
@@ -1998,6 +2197,30 @@
    "regla": "MANUAL",
    "estado": "EJECUTADA",
    "solicitada": "04/11 05:58"
+  },
+  {
+   "usuario_objetivo": "jfernandez@sampol.com",
+   "ip": null,
+   "origen": "AUTOMATICO",
+   "regla": "AUTO-05",
+   "estado": "PENDIENTE",
+   "solicitada": "04/11 09:04"
+  },
+  {
+   "usuario_objetivo": "hmartinez@sampol.com",
+   "ip": null,
+   "origen": "AUTOMATICO",
+   "regla": "AUTO-05",
+   "estado": "PENDIENTE",
+   "solicitada": "04/11 09:04"
+  },
+  {
+   "usuario_objetivo": "pgonzalez@sampol.com",
+   "ip": null,
+   "origen": "AUTOMATICO",
+   "regla": "AUTO-05",
+   "estado": "PENDIENTE",
+   "solicitada": "04/11 09:04"
   }
  ],
  "outlook": [
@@ -2007,11 +2230,11 @@
   },
   {
    "ruta": "02 SOC/Críticas y altas",
-   "correos": 135
+   "correos": 158
   },
   {
    "ruta": "02 SOC/Medias y bajas",
-   "correos": 17
+   "correos": 20
   },
   {
    "ruta": "02 SOC/Revisión manual",
@@ -2023,11 +2246,11 @@
   },
   {
    "ruta": "03 Solicitudes (SOL)",
-   "correos": 24
+   "correos": 26
   },
   {
    "ruta": "04 Ruido",
-   "correos": 25
+   "correos": 40
   },
   {
    "ruta": "05 Cuarentena",
@@ -2043,7 +2266,7 @@
    "remitente_correo": "soc-hackaton@sampol.com",
    "verificada": true,
    "motivo": "Remitente verificado",
-   "correos": 208
+   "correos": 251
   },
   {
    "remitente_correo": "microsoftexchange329e71ec88ae4615bbc36ab6ce41109e@sampol.onmicrosoft.com",
@@ -2202,9 +2425,104 @@
    "gravedad": "CRITICO",
    "titulo": "Investigación confirma persistencia dirigida en el proyecto",
    "aviso": "04/11 04:27"
+  },
+  {
+   "id_alerta_soc": "AL-20261030-0096",
+   "usuario": "lmoreno@sampol.com",
+   "equipo": "gw-madrid-212",
+   "sede": "Madrid",
+   "gravedad": "ALTO",
+   "titulo": "Datos perdidos tras avería de almacenamiento",
+   "aviso": "04/11 05:30"
+  },
+  {
+   "id_alerta_soc": "AL-20261030-0299",
+   "usuario": "sfernandez@sampol.com",
+   "equipo": "app-valencia-139",
+   "sede": "Valencia",
+   "gravedad": "CRITICO",
+   "titulo": "Investigación confirma persistencia dirigida en el proyecto",
+   "aviso": "04/11 06:28"
+  },
+  {
+   "id_alerta_soc": "AL-20261030-0316",
+   "usuario": "prodriguez@sampol.com",
+   "equipo": "gw-sevilla-156",
+   "sede": "Sevilla",
+   "gravedad": "ALTO",
+   "titulo": "Equipo sustraído de zona restringida",
+   "aviso": "04/11 07:02"
+  },
+  {
+   "id_alerta_soc": "AL-20261030-0325",
+   "usuario": "dgonzalez@sampol.com",
+   "equipo": "srv-palma-005",
+   "sede": "Palma",
+   "gravedad": "ALTO",
+   "titulo": "Suplantación solicita cambio de cuenta de pago",
+   "aviso": "04/11 07:22"
+  },
+  {
+   "id_alerta_soc": "AL-20261030-0336",
+   "usuario": "pgonzalez@sampol.com",
+   "equipo": "gw-bilbao-016",
+   "sede": "Bilbao",
+   "gravedad": "CRITICO",
+   "titulo": "Uso confirmado de cuenta administrativa desde origen no autorizado",
+   "aviso": "04/11 07:35"
+  },
+  {
+   "id_alerta_soc": "AL-20261030-0346",
+   "usuario": "emartinez@sampol.com",
+   "equipo": "pc-sevilla-026",
+   "sede": "Sevilla",
+   "gravedad": "MEDIO",
+   "titulo": "Llamada intenta obtener información del equipo",
+   "aviso": "04/11 08:00"
+  },
+  {
+   "id_alerta_soc": "AL-20261030-0356",
+   "usuario": "pmartinez@sampol.com",
+   "equipo": "gw-madrid-036",
+   "sede": "Madrid",
+   "gravedad": "ALTO",
+   "titulo": "Datos perdidos tras avería de almacenamiento",
+   "aviso": "04/11 08:17"
+  },
+  {
+   "id_alerta_soc": "AL-20261030-0370",
+   "usuario": "ilopez@sampol.com",
+   "equipo": "pc-sevilla-050",
+   "sede": "Sevilla",
+   "gravedad": "CRITICO",
+   "titulo": "Uso confirmado de cuenta administrativa desde origen no autorizado",
+   "aviso": "04/11 08:53"
+  },
+  {
+   "id_alerta_soc": "AL-20261030-0380",
+   "usuario": "tlopez@sampol.com",
+   "equipo": "gw-madrid-060",
+   "sede": "Madrid",
+   "gravedad": "MEDIO",
+   "titulo": "Llamada intenta obtener información del equipo",
+   "aviso": "04/11 08:58"
+  },
+  {
+   "id_alerta_soc": "AL-20261030-0390",
+   "usuario": "isanchez@sampol.com",
+   "equipo": "pc-bilbao-070",
+   "sede": "Bilbao",
+   "gravedad": "ALTO",
+   "titulo": "Datos perdidos tras avería de almacenamiento",
+   "aviso": "04/11 09:05"
   }
  ],
  "compromisos_aislados": [
+  {
+   "usuario": "ilopez@sampol.com",
+   "decision": "DESCARTAR",
+   "motivo": "Acceso no reconocido sin phishing ni fuerza bruta previos en 120 min: no hay cadena; lo valora una persona"
+  },
   {
    "usuario": "mgonzalez@sampol.com",
    "decision": "DESCARTAR",
@@ -2243,9 +2561,9 @@
   }
  ],
  "ingesta": {
-  "ultima_insercion": "2026-11-04T04:54:15.366893",
-  "ultimo_correo": "2026-11-04T04:52:36",
-  "min_sin_ingesta": 65.0
+  "ultima_insercion": "2026-11-04T09:13:17.408981",
+  "ultimo_correo": "2026-11-04T09:11:00",
+  "min_sin_ingesta": 16.0
  },
  "demo": [
   {
@@ -2335,6 +2653,14 @@
   {
    "version": "016_outlook_power_automate.sql",
    "aplicada": "04/11 00:53"
+  },
+  {
+   "version": "017_auto06_fases_autenticas.sql",
+   "aplicada": "04/11 09:17"
+  },
+  {
+   "version": "018_kpis_sin_simulacion.sql",
+   "aplicada": "04/11 09:18"
   }
  ],
  "api": {
@@ -2380,14 +2706,14 @@
   ]
  },
  "ruido_real": {
-  "ruido": 44,
-  "correos": 214,
-  "pct": 0.2056,
+  "ruido": 63,
+  "correos": 257,
+  "pct": 0.2451,
   "componentes": {
-   "duplicadas": 14,
-   "informativas": 17,
+   "duplicadas": 20,
+   "informativas": 26,
    "falsas_alarmas": 0,
-   "no_soc": 6,
+   "no_soc": 10,
    "malformados": 7
   }
  },
@@ -2440,31 +2766,31 @@
    "D12": 0.7,
    "E12": "%",
    "F12": "Estimación: sustituir por el % real de la BD (hoja DatosBD)",
-   "A13": "% del ruido filtrado automáticamente",
-   "B13": 0.65,
-   "C13": 0.75,
-   "D13": 0.9,
+   "A13": "% del ruido que se filtra automáticamente",
+   "B13": 0.35,
+   "C13": 0.5,
+   "D13": 0.65,
    "E13": "%",
-   "F13": "Estimación: validar con pruebas sobre alertas ya etiquetadas",
+   "F13": "Estimación prudente: deduplicación + reglas sobre ruido conocido. Validar con alertas ya etiquetadas",
    "A14": "Minutos por alerta restante (con solución)",
-   "B14": 7.0,
-   "C14": 6.0,
-   "D14": 4.0,
+   "B14": 10.0,
+   "C14": 9.0,
+   "D14": 8.0,
    "E14": "min",
-   "F14": "Estimación: triaje asistido con alerta ya clasificada (INCIBE) y priorizada",
+   "F14": "Estimación: con la alerta ya clasificada y priorizada se ahorra solo una parte del tiempo de revisión (hoy 12 min)",
    "A15": "% de horas liberadas contabilizadas como ahorro",
-   "B15": 0.5,
-   "C15": 0.7,
-   "D15": 0.85,
+   "B15": 0.4,
+   "C15": 0.5,
+   "D15": 0.7,
    "E15": "%",
-   "F15": "Prudencia: las horas no salen de la nómina, se reasignan a tareas de más valor; solo contamos una parte como ahorro",
+   "F15": "Prudencia: las horas no salen de la nómina, se reasignan a tareas de más valor; solo contamos como ahorro la parte que evita horas extra, subcontratación o contratación",
    "A16": "C. Coste de construir la solución",
-   "A17": "Horas de desarrollo",
-   "B17": 280.0,
-   "C17": 240.0,
-   "D17": 200.0,
+   "A17": "Horas de desarrollo e implantación",
+   "B17": 450.0,
+   "C17": 400.0,
+   "D17": 320.0,
    "E17": "h",
-   "F17": "Estimación del equipo (personas × horas de desarrollo e implantación)",
+   "F17": "Estimación: desarrollo + integración + pruebas + formación + contingencia",
    "A18": "Coste por hora de desarrollo interno",
    "B18": 50.0,
    "C18": 50.0,
@@ -2472,23 +2798,23 @@
    "E18": "€/h",
    "F18": "DATO DEL DIRECTOR: hora de desarrollo interno",
    "A19": "Licencias / APIs / IA (mensual)",
-   "B19": 50.0,
-   "C19": 40.0,
-   "D19": 30.0,
+   "B19": 80.0,
+   "C19": 60.0,
+   "D19": 40.0,
    "E19": "€/mes",
    "F19": "Estimación: APIs de enriquecimiento, IA, etc.",
    "A20": "Infraestructura (servidor + BD, mensual)",
-   "B20": 120.0,
-   "C20": 100.0,
-   "D20": 80.0,
+   "B20": 250.0,
+   "C20": 200.0,
+   "D20": 150.0,
    "E20": "€/mes",
-   "F20": "Estimación según dónde se monte la BD (ficha)",
-   "A21": "Horas de mantenimiento al mes",
-   "B21": 12.0,
-   "C21": 10.0,
-   "D21": 6.0,
+   "F20": "Estimación: servidor, base de datos, copias de seguridad, monitorización",
+   "A21": "Horas de soporte y mantenimiento al mes",
+   "B21": 25.0,
+   "C21": 20.0,
+   "D21": 12.0,
    "E21": "h/mes",
-   "F21": "Estimación: ajuste de reglas, soporte, actualizaciones",
+   "F21": "Estimación: soporte y ajuste de reglas de un sistema que apoya un SOC 24 h",
    "A22": "D. Incidente grave (coste evitado)",
    "A23": "Probabilidad anual de incidente grave",
    "B23": 0.1,
@@ -2528,28 +2854,28 @@
    "E29": "€",
    "F29": "DATO DEL DIRECTOR: 20.000 € iniciales",
    "A30": "Horas de administración al mes",
-   "B30": 10.0,
-   "C30": 8.0,
-   "D30": 6.0,
+   "B30": 12.0,
+   "C30": 10.0,
+   "D30": 8.0,
    "E30": "h/mes",
    "F30": "Estimación",
-   "A31": "% del ruido filtrado",
-   "B31": 0.8,
-   "C31": 0.85,
-   "D31": 0.9,
+   "A31": "% del ruido que filtra",
+   "B31": 0.5,
+   "C31": 0.7,
+   "D31": 0.8,
    "E31": "%",
    "F31": "Estimación según demo/ficha del proveedor",
    "A32": "Minutos por alerta restante",
-   "B32": 6.0,
-   "C32": 5.0,
-   "D32": 4.0,
+   "B32": 8.0,
+   "C32": 7.0,
+   "D32": 6.0,
    "E32": "min",
    "F32": "Estimación según demo del proveedor",
    "A33": "F. Automatización del bloqueo de usuarios e IPs (directriz del director)",
    "A34": "% de bloqueos que pasan a ser automáticos",
-   "B34": 0.3,
-   "C34": 0.5,
-   "D34": 0.7,
+   "B34": 0.2,
+   "C34": 0.4,
+   "D34": 0.6,
    "E34": "%",
    "F34": "Estimación: el resto sigue siendo manual (activos críticos, casos dudosos)",
    "A35": "Minutos de supervisión por bloqueo automático",
@@ -2559,15 +2885,15 @@
    "E35": "min",
    "F35": "Estimación: revisar el registro y confirmar o revertir",
    "A36": "Horas de desarrollo del módulo de bloqueo automático",
-   "B36": 60.0,
-   "C36": 40.0,
-   "D36": 30.0,
+   "B36": 80.0,
+   "C36": 60.0,
+   "D36": 40.0,
    "E36": "h",
    "F36": "Estimación. Ya incluidas en las horas de desarrollo totales (sección C)",
    "A37": "Horas de mantenimiento del módulo al mes",
-   "B37": 3.0,
-   "C37": 2.0,
-   "D37": 1.0,
+   "B37": 4.0,
+   "C37": 3.0,
+   "D37": 2.0,
    "E37": "h/mes",
    "F37": "Estimación: ajustar reglas, listas blancas, revisar falsos positivos",
    "A38": "% de bloqueos que, hechos tarde, acabarían en parada de servicio",
@@ -2613,169 +2939,174 @@
    "E10": "alertas + bloqueos",
    "A11": "2. Con la solución",
    "A12": "Alertas filtradas automáticamente",
-   "B12": "1,073",
-   "C12": "1,350",
-   "D12": "1,890",
+   "B12": 578.0,
+   "C12": 900.0,
+   "D12": "1,365",
    "E12": "alertas × % ruido × % filtrado",
    "A13": "Alertas que aún requieren revisión",
-   "B13": "1,928",
-   "C13": "1,650",
-   "D13": "1,110",
+   "B13": "2,423",
+   "C13": "2,100",
+   "D13": "1,635",
    "E13": "alertas − filtradas",
    "A14": "Horas/mes revisando alertas con la solución",
-   "B14": 224.9,
-   "C14": 165.0,
-   "D14": 74.0,
+   "B14": 403.8,
+   "C14": 315.0,
+   "D14": 218.0,
    "E14": "restantes × min. con solución ÷ 60",
    "A15": "Coste mensual de revisar alertas con la solución",
-   "B15": "10,119 €",
-   "C15": "7,425 €",
-   "D15": "3,330 €",
+   "B15": "18,169 €",
+   "C15": "14,175 €",
+   "D15": "9,810 €",
    "E15": "horas con solución × coste/hora",
    "A16": "Ahorro mensual en revisión de alertas",
-   "B16": "16,881 €",
-   "C16": "19,575 €",
-   "D16": "23,670 €",
+   "B16": "8,831 €",
+   "C16": "12,825 €",
+   "D16": "17,190 €",
    "E16": "coste actual − coste con solución",
    "A17": "Horas/mes ahorradas en bloqueos",
-   "B17": 12.0,
-   "C17": 22.0,
-   "D17": 32.2,
+   "B17": 8.0,
+   "C17": 17.6,
+   "D17": 27.6,
    "E17": "bloqueos × % automáticos × (min. manual − min. supervisión) ÷ 60",
    "A18": "Ahorro mensual en bloqueos manuales",
-   "B18": "540 €",
-   "C18": "990 €",
-   "D18": "1,449 €",
+   "B18": "360 €",
+   "C18": "792 €",
+   "D18": "1,242 €",
    "E18": "horas ahorradas × coste/hora",
    "A19": "Coste mensual total con la solución",
-   "B19": "11,829 €",
-   "C19": "8,685 €",
-   "D19": "4,131 €",
+   "B19": "20,059 €",
+   "C19": "15,633 €",
+   "D19": "10,818 €",
    "E19": "coste total actual − ahorros",
    "A20": "Horas liberadas al mes",
-   "B20": 387.1,
-   "C20": 457.0,
-   "D20": 558.2,
+   "B20": 204.3,
+   "C20": 302.6,
+   "D20": 409.6,
    "E20": "horas de alertas + horas de bloqueos ahorradas",
-   "A21": "Ahorro bruto mensual",
-   "B21": "17,421 €",
-   "C21": "20,565 €",
-   "D21": "25,119 €",
-   "E21": "alertas + bloqueos",
-   "A22": "Ahorro monetizable mensual (prudente)",
-   "B22": "8,710 €",
-   "C22": "14,396 €",
-   "D22": "21,351 €",
-   "E22": "ahorro bruto × % contabilizado (el resto se reasigna a tareas de más valor)",
-   "A23": "3. Inversión y costes recurrentes",
-   "A24": "Inversión inicial",
-   "B24": "14,000 €",
-   "C24": "12,000 €",
-   "D24": "10,000 €",
-   "E24": "horas de desarrollo × coste/hora",
-   "A25": "Costes recurrentes mensuales",
-   "B25": "710 €",
-   "C25": "590 €",
-   "D25": "380 €",
-   "E25": "licencias + infraestructura + mantenimiento (h × coste/hora)",
-   "A26": "Ahorro neto mensual",
-   "B26": "8,000 €",
-   "C26": "13,806 €",
-   "D26": "20,971 €",
-   "E26": "ahorro monetizable − recurrentes",
-   "A27": "4. Rentabilidad",
-   "A28": "Periodo de recuperación (meses)",
-   "B28": 1.7,
-   "C28": 0.9,
-   "D28": 0.5,
-   "E28": "inversión inicial ÷ ahorro neto mensual",
-   "A29": "Costes del primer año",
-   "B29": "22,520 €",
-   "C29": "19,080 €",
-   "D29": "14,560 €",
-   "E29": "inversión + 12 × recurrentes",
-   "A30": "Ahorro anual monetizable",
-   "B30": "104,524 €",
-   "C30": "172,746 €",
-   "D30": "256,214 €",
-   "E30": "ahorro mensual × 12",
-   "A31": "ROI 1.er año (solo ahorro de tiempo)",
-   "B31": "364.1%",
-   "C31": "805.4%",
-   "D31": "1659.7%",
-   "E31": "(beneficios − costes) ÷ costes",
-   "A32": "5. Coste evitado de incidentes graves",
-   "A33": "Coste de un incidente grave",
-   "B33": "50,000 €",
-   "C33": "100,000 €",
-   "D33": "200,000 €",
-   "E33": "horas de parada × coste de la hora parada",
-   "A34": "Coste evitado anual esperado",
-   "B34": "1,000 €",
-   "C34": "5,250 €",
-   "D34": "20,000 €",
-   "E34": "probabilidad × coste incidente × % reducción",
-   "A35": "Beneficio total año 1",
-   "B35": "107,684 €",
-   "C35": "192,396 €",
-   "D35": "336,694 €",
-   "E35": "ahorro anual + coste evitado + paradas evitadas por bloqueo automático",
-   "A36": "ROI 1.er año (ahorro + coste evitado)",
-   "B36": "378.2%",
-   "C36": "908.4%",
-   "D36": "2212.5%",
-   "E36": "(beneficios − costes) ÷ costes",
-   "A37": "6. Retorno de la automatización de bloqueos (usuarios e IPs)",
-   "A38": "Bloqueos manuales al año",
-   "B38": "1,440",
-   "C38": "1,440",
-   "D38": "1,440",
-   "E38": "bloqueos al mes × 12",
-   "A39": "Ahorro anual en tiempo por automatizar",
-   "B39": "6,480 €",
-   "C39": "11,880 €",
-   "D39": "17,388 €",
-   "E39": "ahorro mensual × 12",
-   "A40": "Incidentes con parada evitados al año",
-   "B40": 0.043,
-   "C40": 0.144,
-   "D40": 0.302,
-   "E40": "bloqueos/año × % que acabaría en parada × % automáticos",
-   "A41": "Coste evitado anual por bloqueo automático",
-   "B41": "2,160 €",
-   "C41": "14,400 €",
-   "D41": "60,480 €",
-   "E41": "incidentes evitados × coste de un incidente grave",
-   "A42": "Beneficio anual de la automatización",
-   "B42": "8,640 €",
-   "C42": "26,280 €",
-   "D42": "77,868 €",
-   "E42": "ahorro en tiempo + coste evitado",
-   "A43": "Inversión del módulo de bloqueo automático",
-   "B43": "3,000 €",
-   "C43": "2,000 €",
-   "D43": "1,500 €",
-   "E43": "horas del módulo × coste/hora de desarrollo",
-   "A44": "Costes recurrentes mensuales del módulo",
-   "B44": "135 €",
-   "C44": "90 €",
-   "D44": "45 €",
-   "E44": "horas de mantenimiento × coste/hora",
-   "A45": "Costes del primer año del módulo",
-   "B45": "4,620 €",
-   "C45": "3,080 €",
-   "D45": "2,040 €",
-   "E45": "inversión + 12 × recurrentes",
-   "A46": "ROI 1.er año de la automatización",
-   "B46": "87.0%",
-   "C46": "753.2%",
-   "D46": "3717.1%",
-   "E46": "(beneficio − costes) ÷ costes",
-   "A47": "Periodo de recuperación del módulo (meses)",
-   "B47": 5.1,
-   "C47": 1.0,
-   "D47": 0.2,
-   "E47": "inversión ÷ (beneficio mensual − recurrentes)"
+   "A21": "Chequeo: % del tiempo actual que se libera",
+   "B21": "31.4%",
+   "C21": "46.6%",
+   "D21": "63.0%",
+   "E21": "horas liberadas ÷ (horas de alertas + bloqueos). Si pasa del 50 %, revisar hipótesis",
+   "A22": "Ahorro bruto mensual",
+   "B22": "9,191 €",
+   "C22": "13,617 €",
+   "D22": "18,432 €",
+   "E22": "alertas + bloqueos",
+   "A23": "Ahorro monetizable mensual (prudente)",
+   "B23": "3,677 €",
+   "C23": "6,809 €",
+   "D23": "12,902 €",
+   "E23": "ahorro bruto × % contabilizado (el resto se reasigna a tareas de más valor)",
+   "A24": "3. Inversión y costes recurrentes",
+   "A25": "Inversión inicial",
+   "B25": "22,500 €",
+   "C25": "20,000 €",
+   "D25": "16,000 €",
+   "E25": "horas de desarrollo × coste/hora",
+   "A26": "Costes recurrentes mensuales",
+   "B26": "1,455 €",
+   "C26": "1,160 €",
+   "D26": "730 €",
+   "E26": "licencias + infraestructura + mantenimiento (h × coste/hora)",
+   "A27": "Ahorro neto mensual",
+   "B27": "2,222 €",
+   "C27": "5,649 €",
+   "D27": "12,172 €",
+   "E27": "ahorro monetizable − recurrentes",
+   "A28": "4. Rentabilidad",
+   "A29": "Periodo de recuperación (meses)",
+   "B29": 10.1,
+   "C29": 3.5,
+   "D29": 1.3,
+   "E29": "inversión inicial ÷ ahorro neto mensual",
+   "A30": "Costes del primer año",
+   "B30": "39,960 €",
+   "C30": "33,920 €",
+   "D30": "24,760 €",
+   "E30": "inversión + 12 × recurrentes",
+   "A31": "Ahorro anual monetizable",
+   "B31": "44,118 €",
+   "C31": "81,702 €",
+   "D31": "154,829 €",
+   "E31": "ahorro mensual × 12",
+   "A32": "ROI 1.er año (solo ahorro de tiempo)",
+   "B32": "10.4%",
+   "C32": "140.9%",
+   "D32": "525.3%",
+   "E32": "(beneficios − costes) ÷ costes",
+   "A33": "5. Coste evitado de incidentes graves",
+   "A34": "Coste de un incidente grave",
+   "B34": "50,000 €",
+   "C34": "100,000 €",
+   "D34": "200,000 €",
+   "E34": "horas de parada × coste de la hora parada",
+   "A35": "Coste evitado anual esperado",
+   "B35": "1,000 €",
+   "C35": "5,250 €",
+   "D35": "20,000 €",
+   "E35": "probabilidad × coste incidente × % reducción",
+   "A36": "Beneficio total año 1",
+   "B36": "46,558 €",
+   "C36": "98,472 €",
+   "D36": "226,669 €",
+   "E36": "ahorro anual + coste evitado + paradas evitadas por bloqueo automático",
+   "A37": "ROI 1.er año (ahorro + coste evitado)",
+   "B37": "16.5%",
+   "C37": "190.3%",
+   "D37": "815.5%",
+   "E37": "(beneficios − costes) ÷ costes",
+   "A38": "6. Retorno de la automatización de bloqueos (usuarios e IPs)",
+   "A39": "Bloqueos manuales al año",
+   "B39": "1,440",
+   "C39": "1,440",
+   "D39": "1,440",
+   "E39": "bloqueos al mes × 12",
+   "A40": "Ahorro anual en tiempo por automatizar",
+   "B40": "4,320 €",
+   "C40": "9,504 €",
+   "D40": "14,904 €",
+   "E40": "ahorro mensual × 12",
+   "A41": "Incidentes con parada evitados al año",
+   "B41": 0.029,
+   "C41": 0.115,
+   "D41": 0.259,
+   "E41": "bloqueos/año × % que acabaría en parada × % automáticos",
+   "A42": "Coste evitado anual por bloqueo automático",
+   "B42": "1,440 €",
+   "C42": "11,520 €",
+   "D42": "51,840 €",
+   "E42": "incidentes evitados × coste de un incidente grave",
+   "A43": "Beneficio anual de la automatización",
+   "B43": "5,760 €",
+   "C43": "21,024 €",
+   "D43": "66,744 €",
+   "E43": "ahorro en tiempo + coste evitado",
+   "A44": "Inversión del módulo de bloqueo automático",
+   "B44": "4,000 €",
+   "C44": "3,000 €",
+   "D44": "2,000 €",
+   "E44": "horas del módulo × coste/hora de desarrollo",
+   "A45": "Costes recurrentes mensuales del módulo",
+   "B45": "180 €",
+   "C45": "135 €",
+   "D45": "90 €",
+   "E45": "horas de mantenimiento × coste/hora",
+   "A46": "Costes del primer año del módulo",
+   "B46": "6,160 €",
+   "C46": "4,620 €",
+   "D46": "3,080 €",
+   "E46": "inversión + 12 × recurrentes",
+   "A47": "ROI 1.er año de la automatización",
+   "B47": "(6.5%)",
+   "C47": "355.1%",
+   "D47": "2067.0%",
+   "E47": "(beneficio − costes) ÷ costes",
+   "A48": "Periodo de recuperación del módulo (meses)",
+   "B48": 13.3,
+   "C48": 1.9,
+   "D48": 0.4,
+   "E48": "inversión ÷ (beneficio mensual − recurrentes)"
   },
   "comparativa": {
    "A1": "Construir nosotros vs. comprar herramienta comercial",
@@ -2788,49 +3119,49 @@
    "C6": "Comprar (SIEM/SOAR)",
    "D6": "Notas",
    "A7": "Alertas filtradas automáticamente",
-   "B7": "1,350",
-   "C7": "1,530",
+   "B7": 900.0,
+   "C7": "1,260",
    "A8": "Alertas que aún requieren revisión",
-   "B8": "1,650",
-   "C8": "1,470",
+   "B8": "2,100",
+   "C8": "1,740",
    "A9": "Horas/mes con la solución",
-   "B9": 165.0,
-   "C9": 122.5,
+   "B9": 315.0,
+   "C9": 203.0,
    "A10": "Ahorro bruto mensual",
-   "B10": "20,565 €",
-   "C10": "22,478 €",
+   "B10": "13,617 €",
+   "C10": "18,657 €",
    "D10": "Mismo coste de partida y mismo ahorro en bloqueos para ambas",
    "A11": "Ahorro monetizable mensual",
-   "B11": "14,396 €",
-   "C11": "15,734 €",
+   "B11": "6,809 €",
+   "C11": "9,329 €",
    "D11": "Mismo % de prudencia para ambas",
    "A12": "Inversión inicial",
-   "B12": "12,000 €",
+   "B12": "20,000 €",
    "C12": "20,000 €",
    "A13": "Costes recurrentes mensuales",
-   "B13": "590 €",
-   "C13": "5,360 €",
+   "B13": "1,160 €",
+   "C13": "5,450 €",
    "D13": "Comprar: licencia/12 + administración",
    "A14": "Ahorro neto mensual",
-   "B14": "13,806 €",
-   "C14": "10,374 €",
+   "B14": "5,649 €",
+   "C14": "3,879 €",
    "A15": "Periodo de recuperación (meses)",
-   "B15": 0.9,
-   "C15": 1.9,
+   "B15": 3.5,
+   "C15": 5.2,
    "A16": "Coste total a 3 años",
-   "B16": "33,240 €",
-   "C16": "212,960 €",
+   "B16": "61,760 €",
+   "C16": "216,200 €",
    "D16": "inversión + 36 meses de recurrentes",
    "A17": "Ahorro monetizable a 3 años",
-   "B17": "518,238 €",
-   "C17": "566,433 €",
+   "B17": "245,106 €",
+   "C17": "335,826 €",
    "A18": "Balance neto a 3 años",
-   "B18": "484,998 €",
-   "C18": "353,473 €",
+   "B18": "183,346 €",
+   "C18": "119,626 €",
    "D18": "ahorro − costes",
    "A19": "ROI a 3 años",
-   "B19": "1459.1%",
-   "C19": "166.0%",
+   "B19": "296.9%",
+   "C19": "55.3%",
    "D19": "balance ÷ costes",
    "A21": "Opción financieramente mejor a 3 años",
    "B21": "Construir (propia)",
@@ -2912,6 +3243,227 @@
    "B19": "Total",
    "D19": "31,100 €",
    "B21": "Por cuál empezaríamos: las de prioridad Alta (bajo coste, alto impacto en cumplimiento y riesgo)."
+  },
+  "resumen": {
+   "A1": "Análisis económico: gestión de alertas del SOC de Sampol",
+   "A2": "Basado en los datos del director (verde en Hipótesis) y en estimaciones del equipo (amarillo), que se irán sustituyendo por datos de la BD.",
+   "A3": "Leyenda: verde claro = dato del director · amarillo = estimación nuestra · texto negro = fórmula · texto verde = enlace a otra hoja.",
+   "A5": "Indicador",
+   "B5": "Prudente",
+   "C5": "Realista",
+   "D5": "Optimista",
+   "A6": "Coste actual mensual (alertas + bloqueos)",
+   "B6": "29,250 €",
+   "C6": "29,250 €",
+   "D6": "29,250 €",
+   "A7": "Horas liberadas al mes",
+   "B7": 204.3,
+   "C7": 302.6,
+   "D7": 409.6,
+   "A8": "Chequeo: % del tiempo actual que se libera",
+   "B8": "31.4%",
+   "C8": "46.6%",
+   "D8": "63.0%",
+   "A9": "Inversión inicial",
+   "B9": "22,500 €",
+   "C9": "20,000 €",
+   "D9": "16,000 €",
+   "A10": "Costes recurrentes mensuales",
+   "B10": "1,455 €",
+   "C10": "1,160 €",
+   "D10": "730 €",
+   "A11": "Ahorro neto mensual",
+   "B11": "2,222 €",
+   "C11": "5,649 €",
+   "D11": "12,172 €",
+   "A12": "Periodo de recuperación (meses)",
+   "B12": 10.1,
+   "C12": 3.5,
+   "D12": 1.3,
+   "A13": "ROI 1.er año (solo ahorro de tiempo)",
+   "B13": "10.4%",
+   "C13": "140.9%",
+   "D13": "525.3%",
+   "A14": "Coste de un incidente grave",
+   "B14": "50,000 €",
+   "C14": "100,000 €",
+   "D14": "200,000 €",
+   "A15": "Coste evitado anual esperado",
+   "B15": "1,000 €",
+   "C15": "5,250 €",
+   "D15": "20,000 €",
+   "A16": "Automatización de bloqueos: ahorro anual en tiempo",
+   "B16": "4,320 €",
+   "C16": "9,504 €",
+   "D16": "14,904 €",
+   "A17": "Automatización de bloqueos: coste evitado anual",
+   "B17": "1,440 €",
+   "C17": "11,520 €",
+   "D17": "51,840 €",
+   "A18": "Automatización de bloqueos: recuperación (meses)",
+   "B18": 13.3,
+   "C18": 1.9,
+   "D18": 0.4,
+   "A19": "Automatización de bloqueos: ROI 1.er año",
+   "B19": "(6.5%)",
+   "C19": "355.1%",
+   "D19": "2067.0%",
+   "A20": "ROI 1.er año (ahorro + coste evitado)",
+   "B20": "16.5%",
+   "C20": "190.3%",
+   "D20": "815.5%",
+   "A22": "Conclusión para el director (escenario realista)",
+   "A23": "Recomendamos construir la solución propia: con una inversión de 20,000 € y un ahorro neto de 5,649 €/mes se recupera en 3.5 meses (ROI año 1: 190% incluyendo coste evitado). Comparativa (Realista): mejor opción a 3 años = Construir (propia). Las horas liberadas se reasignan a análisis y prevención, no a reducir plantilla. Bloqueo automático de IPs/usuarios: ahorra 9,504 €/año en tiempo, evita unos 11,520 € al año en paradas y se recupera en 1.9 meses.",
+   "A25": "Contribución a instalaciones energéticas más seguras, fiables y preparadas para la transición",
+   "A26": "• Seguras: detección y respuesta más rápidas a intrusiones y fraude; menos alertas críticas perdidas entre el ruido.",
+   "A27": "• Fiables: menos riesgo de interrupciones de disponibilidad en instalaciones que Sampol opera.",
+   "A28": "• Transición energética: base escalable para monitorizar más activos (renovables, almacenamiento, OT) sin multiplicar el equipo.",
+   "A29": "• Cumplimiento: clasificación con la taxonomía INCIBE y plantillas para notificar incidentes."
+  },
+  "automatizacion": {
+   "A1": "Retorno de la automatización: bloqueo automático de usuarios e IPs",
+   "A2": "Directriz del director (4-nov): calcular lo que supone bloquear automáticamente usuarios o IPs, para justificar la inversión en ciber.",
+   "A4": "Concepto",
+   "B4": "Prudente",
+   "C4": "Realista",
+   "D4": "Optimista",
+   "E4": "Origen",
+   "A5": "Bloqueos manuales al mes",
+   "B5": 120.0,
+   "C5": 120.0,
+   "D5": 120.0,
+   "E5": "Dato del director",
+   "A6": "Minutos por bloqueo manual",
+   "B6": 25.0,
+   "C6": 25.0,
+   "D6": 25.0,
+   "E6": "Dato del director",
+   "A7": "Coste actual mensual de los bloqueos manuales",
+   "B7": "2,250 €",
+   "C7": "2,250 €",
+   "D7": "2,250 €",
+   "E7": "bloqueos × minutos × coste/hora",
+   "A8": "Bloqueos que pasan a ser automáticos al mes",
+   "B8": 24.0,
+   "C8": 48.0,
+   "D8": 72.0,
+   "E8": "Estimación nuestra",
+   "A9": "Horas liberadas al mes",
+   "B9": 8.0,
+   "C9": 17.6,
+   "D9": 27.6,
+   "E9": "Cálculos",
+   "A10": "Ahorro anual en tiempo",
+   "B10": "4,320 €",
+   "C10": "9,504 €",
+   "D10": "14,904 €",
+   "E10": "Cálculos",
+   "A11": "Incidentes con parada evitados al año",
+   "B11": 0.029,
+   "C11": 0.115,
+   "D11": 0.259,
+   "E11": "Estimación nuestra",
+   "A12": "Coste evitado anual (paradas a 25.000 €/h)",
+   "B12": "1,440 €",
+   "C12": "11,520 €",
+   "D12": "51,840 €",
+   "E12": "Hora parada: dato del director",
+   "A13": "Beneficio anual de la automatización",
+   "B13": "5,760 €",
+   "C13": "21,024 €",
+   "D13": "66,744 €",
+   "E13": "Ahorro + coste evitado",
+   "A14": "Inversión del módulo",
+   "B14": "4,000 €",
+   "C14": "3,000 €",
+   "D14": "2,000 €",
+   "E14": "Horas × 50 €/h (dato del director)",
+   "A15": "Costes recurrentes mensuales",
+   "B15": "180 €",
+   "C15": "135 €",
+   "D15": "90 €",
+   "E15": "Mantenimiento",
+   "A16": "ROI primer año",
+   "B16": "(6.5%)",
+   "C16": "355.1%",
+   "D16": "2067.0%",
+   "E16": "Usar el prudente o realista, no el optimista",
+   "A17": "Periodo de recuperación (meses)",
+   "B17": 13.3,
+   "C17": 1.9,
+   "D17": 0.4,
+   "E17": "Inversión ÷ beneficio mensual neto",
+   "A19": "Lectura para el director (escenario realista)",
+   "A20": "Automatizar el bloqueo de usuarios e IPs libera 18 h/mes (9,504 €/año) y reduce el riesgo de paradas, con un coste evitado esperado de 11,520 €/año. El módulo cuesta 3,000 € y se recupera en 1.9 meses. Cada hora de servicio parado cuesta 25.000 €, por eso la rapidez del bloqueo es lo que más pesa.",
+   "A22": "Riesgos y salvaguardas del bloqueo automático",
+   "A23": "• Falsos positivos: bloquear un usuario o IP legítimos puede parar a un operador o a un cliente.",
+   "A24": "• Lista blanca de IPs y usuarios críticos que nunca se bloquean solos.",
+   "A25": "• Aprobación humana para activos críticos; automático solo en casos de alta confianza.",
+   "A26": "• Registro de cada bloqueo (quién, cuándo, por qué) y botón para revertirlo."
+  },
+  "datosbd": {
+   "A1": "Datos de vuestra base de datos (EJEMPLO inventado: sustituir)",
+   "A2": "Rellenad con consultas SQL a vuestra BD. El % de ruido global alimenta la hipótesis 'ruido' (hoja Hipótesis).",
+   "A4": "Clase INCIBE",
+   "B4": "Nº alertas",
+   "C4": "De ellas, ruido",
+   "D4": "% ruido",
+   "E4": "Tiempo medio de respuesta (min)",
+   "A5": "Contenido abusivo",
+   "B5": 220.0,
+   "C5": 190.0,
+   "D5": "86.4%",
+   "E5": 8.0,
+   "A6": "Contenido dañino",
+   "B6": 90.0,
+   "C6": 20.0,
+   "D6": "22.2%",
+   "E6": 12.0,
+   "A7": "Obtención de información",
+   "B7": 260.0,
+   "C7": 200.0,
+   "D7": "76.9%",
+   "E7": 6.0,
+   "A8": "Intento de intrusión",
+   "B8": 180.0,
+   "C8": 120.0,
+   "D8": "66.7%",
+   "E8": 14.0,
+   "A9": "Intrusión",
+   "B9": 25.0,
+   "C9": 2.0,
+   "D9": "8.0%",
+   "E9": 45.0,
+   "A10": "Disponibilidad",
+   "B10": 30.0,
+   "C10": 5.0,
+   "D10": "16.7%",
+   "E10": 30.0,
+   "A11": "Compromiso de la información",
+   "B11": 15.0,
+   "C11": 2.0,
+   "D11": "13.3%",
+   "E11": 40.0,
+   "A12": "Fraude",
+   "B12": 140.0,
+   "C12": 60.0,
+   "D12": "42.9%",
+   "E12": 15.0,
+   "A13": "Vulnerable",
+   "B13": 60.0,
+   "C13": 40.0,
+   "D13": "66.7%",
+   "E13": 20.0,
+   "A14": "Otros",
+   "B14": 30.0,
+   "C14": 25.0,
+   "D14": "83.3%",
+   "E14": 10.0,
+   "A15": "Total / media ponderada",
+   "B15": "1,050",
+   "C15": 664.0,
+   "D15": "63.2%",
+   "E15": 12.5
   }
  }
 }

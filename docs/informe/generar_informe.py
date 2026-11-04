@@ -7,6 +7,7 @@ Uso (desde la raíz del repo):
 Cada cifra económica lleva su origen: [D] dato del director (Excel), [BD] base de datos del equipo, [H] hipótesis nuestra.
 """
 import json
+from datetime import datetime
 from pathlib import Path
 
 DIR = Path(__file__).resolve().parent
@@ -22,6 +23,18 @@ def num(celda, defecto):
 
 def eur(x):
     return f"{x:,.0f} €".replace(",", ".")
+
+
+def es(v, sufijo=""):
+    """Celda del Excel (formato inglés: '5,649 €', '140.9%', '(6.5%)', 3.5) → texto en español."""
+    if v is None:
+        return "—"
+    if isinstance(v, (int, float)):
+        return f"{v:,.1f}".replace(",", "§").replace(".", ",").replace("§", ".") + sufijo
+    t = str(v).strip()
+    neg = t.startswith("(") and t.endswith(")")
+    t = t.strip("()").replace(",", "§").replace(".", ",").replace("§", ".").replace("%", " %")
+    return ("−" if neg else "") + t + sufijo
 
 
 ESC = ["Bajo", "Medio", "Alto"]           # escenarios de coste (de menos a más grave)
@@ -89,8 +102,19 @@ noche = next((f for f in franjas if f["franja"] == "GUARDIA_NOCHE"), {"total": 0
 demo_bloq = sum(x["total"] for x in d.get("demo", []) if x["accion"] == "BLOQUEAR" and x["estado"] == "EJECUTADA")
 demo_lib = sum(x["total"] for x in d.get("demo", []) if x["accion"] == "LIBERAR" and x["estado"] == "EJECUTADA")
 DEMO_TXT = (f"Demostración (simulador local con el mismo contrato que la API): {demo_bloq} bloqueos ejecutados y verificados "
-            f"y {demo_lib} liberación(es) en un clic. Es una SIMULACIÓN: la contención real espera la clave.") if demo_bloq else ""
-web = {"generado": d["generado"], "demo": DEMO_TXT, "kpis": d["kpis"], "ruido": d["ruido_real"], "coste": coste,
+            f"y {demo_lib} liberación(es) en un clic. Es una SIMULACIÓN: sin clave válida no hay contención por API; la contención real la hizo Infra (5:30).") if demo_bloq else ""
+# ---- Hojas Resumen, Automatización y Comparativa del Excel (escenario realista = columna C) [D]+[H]
+xl = d.get("excel", {})
+res, aut, comp = xl.get("resumen", {}), xl.get("automatizacion", {}), xl.get("comparativa", {})
+excel_roi = {"inversion": es(res.get("C9")), "ahorro_neto": es(res.get("C11")), "recuperacion": es(res.get("C12"), " meses"),
+             "roi1": es(res.get("C13")), "roi1_evitado": es(res.get("C20")),
+             "auto": [{"escenario": n, "ahorro": es(aut.get(c + "10")), "evitado": es(aut.get(c + "12")),
+                       "inversion": es(aut.get(c + "14")), "recuperacion": es(aut.get(c + "17"), " meses"),
+                       "roi1": es(aut.get(c + "16"))} for n, c in zip(("Prudente", "Realista", "Optimista"), "BCD")],
+             "coste_3a": [es(comp.get("B16")), es(comp.get("C16"))], "balance_3a": [es(comp.get("B18")), es(comp.get("C18"))],
+             "mejor_3a": comp.get("B21") or "—", "ruido_ejemplo": es(xl.get("datosbd", {}).get("D15"))}
+
+web = {"generado": d["generado"], "excel_roi": excel_roi, "demo": DEMO_TXT, "kpis": d["kpis"], "ruido": d["ruido_real"], "coste": coste,
        "soc": {"alertas_mes": ALERTAS_MES, "min_alerta": MIN_ALERTA, "coste_hora": H_ANALISTA,
                "coste_mes": coste_soc_mes, "pct_noche": noche["total"] / total_alertas},
        "roi_real": roi_real, "victimas": victimas, "fases": d["cadena_fases"], "ips": d["ips_reconstruidas"],
@@ -119,10 +143,12 @@ w(f"- **Cuánto puede costar.** Entre **{eur(coste[0]['total'])}** y **{eur(cost
   f"A eso se suman una posible sanción (hasta el 4 % de la facturación o 20 M€ por el RGPD) y el fraude en pagos, cuyo importe está pendiente.")
 w(f"- **Qué hemos construido.**")
 w(f"  - **Base de datos:** recibe el buzón, clasifica las alertas con la taxonomía INCIBE y detecta duplicados, inconsistencias y correos manipulados ({k['correos_recibidos']} correos procesados).")
-w(f"  - **Bloqueo automático:** AUTO-05 bloquea con alerta crítica verificada. AUTO-06 bloquea por correlación al detectar la cuenta comprometida, **{min(min_ganados) if min_ganados else 0}-{max(min_ganados) if min_ganados else 0} min antes** de la primera alerta crítica, con 0 falsos positivos.")
-w(f"  - **Valor económico:** solo el coste evitado gracias a AUTO-06 se estima en **{eur(medio['evitado_auto06'])}** en el escenario medio [H].")
-w(f"- **Qué no ha funcionado.** La clave de la API de bloqueo fue revocada (401) tras intentar reenviarse la ficha de credenciales a una cuenta externa: "
-  f"hay **{sum(1 for a in d['acciones'] if a['estado'] == 'PENDIENTE')} bloqueos en cola y 0 ejecutados**. Además, dos directrices siguen sin responder.")
+w(f"  - **Bloqueo automático:** AUTO-05 bloquea con alerta crítica verificada. AUTO-06 bloquea por correlación al detectar la cuenta comprometida, **{min(min_ganados) if min_ganados else 0}-{max(min_ganados) if min_ganados else 0} min antes** de la primera alerta crítica, con 0 falsos positivos en la simulación sobre el histórico (no hay bloqueos ejecutados que lo confirmen).")
+w(f"  - **Valor económico:** el coste **evitable estimado** con AUTO-06 es de **{eur(medio['evitado_auto06'])}** en el escenario medio [H]. Es una estimación contrafactual, no un ahorro realizado.")
+w(f"- **Qué no ha funcionado.** La API de bloqueo rechaza la clave del equipo (401) desde la noche del 03/11 y la organización no la repondrá. "
+  f"La causa no está confirmada; una hipótesis es el intento de reenviar la ficha de credenciales a una cuenta externa (12:30). "
+  f"Hay **{sum(1 for a in d['acciones'] if a['estado'] == 'PENDIENTE')} bloqueos en cola y 0 ejecutados** por el equipo. "
+  f"La contención real la hizo Infra: según el director, a las 5:30 el ataque estaba bloqueado y el servidor aislado.")
 
 w("\n## 2. Qué hicimos durante el reto (cronología)")
 w("| Hora | Hito |\n|---|---|")
@@ -133,6 +159,7 @@ for hora, hito in [
     ("03/11 21:30-23:00", "Diagnóstico: 0 bloqueos posibles, extracción rota y API en 401 → migraciones 007 (extracción HTML), 008-010 (autenticidad por cabeceras de Exchange, regla AUTO-05)"),
     ("03/11 23:00-00:00", "Investigación: cadena *moreno → migraciones 011-013 (fases del ataque, AUTO-06, corrección de corroboración); línea temporal para el jurado"),
     ("04/11 madrugada", "Organización de Outlook (011 del compañero + 015/016), carpetas y flujo de Power Automate; respuestas a las directrices de crisis del director"),
+    ("04/11 mañana", "Simulador de bloqueos etiquetado (sin clave real); correcciones de la revisión WEB-008 → migraciones 017 (AUTO-06 con fases previas auténticas) y 018 (KPIs sin simulación); informe, infografías y presentación"),
 ]:
     w(f"| {hora} | {hito} |")
 w(f"\nMigraciones aplicadas en Azure: {len({m['version'][:3] for m in d['migraciones']})} (001-{max(m['version'][:3] for m in d['migraciones'])}; "
@@ -162,12 +189,12 @@ w("- **Rescate:** doble exigencia, no se recomienda pagar.")
 w("- **Sanciones:** RGPD art. 83.5, hasta 20 M€ o el 4 % de la facturación anual; NIS2 art. 34, hasta 10 M€ o el 2 % para entidades esenciales del sector energético.")
 w("- **Daño reputacional y pérdida de contratos.**")
 
-w("\n### 3.2 Coste evitado con la detección temprana (AUTO-06)")
+w("\n### 3.2 Coste evitable estimado con la detección temprana (AUTO-06, contrafactual)")
 w(f"En {len(tempranas)} de las {n_vict} víctimas (vía robo de credenciales), AUTO-06 detecta la cuenta comprometida "
   f"**entre {min(min_ganados) if min_ganados else 0} y {max(min_ganados) if min_ganados else 0} min antes** que la primera alerta crítica [BD]. "
   f"Si el bloqueo se hubiera ejecutado entonces, se habría evitado la parada de esa parte de la cadena con una efectividad del 50/70/90 % [H]:\n")
 w("| | " + " | ".join(c["escenario"] for c in coste) + " |\n|---|---|---|---|")
-w("| Coste evitado estimado | " + " | ".join(eur(c["evitado_auto06"]) for c in coste) + " |")
+w("| Coste evitable estimado (contrafactual) | " + " | ".join(eur(c["evitado_auto06"]) for c in coste) + " |")
 
 w("\n### 3.3 Coste del SOC manual")
 w(f"- {int(ALERTAS_MES)} alertas al mes × {int(MIN_ALERTA)} min × {eur(H_ANALISTA)}/h [D] = **{eur(coste_alertas)}/mes**; "
@@ -175,19 +202,29 @@ w(f"- {int(ALERTAS_MES)} alertas al mes × {int(MIN_ALERTA)} min × {eur(H_ANALI
 w(f"- En el buzón real, el **{noche['total']/total_alertas:.0%} de las alertas llega en guardia de noche** (22:00-08:00), "
   f"con {noche['criticas']} críticas [BD]. Es la franja más cara y la que tiene menos personal.")
 w(f"- Ruido real medido: **{ruido_real:.1%}** de los correos ({d['ruido_real']['ruido']} de {d['ruido_real']['correos']}: duplicados, informativos, "
-  f"no SOC y malformados) [BD]. El Excel supone entre el 55 % y el 70 %.")
+  f"no SOC y malformados) [BD]. El Excel usa un {excel_roi['ruido_ejemplo']} de ejemplo (hoja «DatosBD», datos inventados pendientes de sustituir).")
 
 w("\n### 3.4 Retorno de nuestra solución")
+w("Hipótesis prudentes del análisis económico revisado (04/11): 400 h de desarrollo e implantación, infraestructura y soporte mensuales, "
+  "y solo la mitad de las horas liberadas se cuenta como ahorro [H].\n")
 w("| Indicador | Excel (realista) | Recalculado con el ruido real |\n|---|---|---|")
-calc = d.get("excel", {}).get("calculos", {})
-w(f"| Ahorro neto mensual | {calc.get('C26', '13.806 €')} | {eur(roi_real['ahorro_neto_mes'])} |")
-w(f"| Inversión inicial | {calc.get('C24', '12.000 €')} | {eur(roi_real['inversion'])} |")
+w(f"| Inversión inicial | {excel_roi['inversion']} | {eur(roi_real['inversion'])} |")
+w(f"| Ahorro neto mensual | {excel_roi['ahorro_neto']} | {eur(roi_real['ahorro_neto_mes'])} |")
 rec = roi_real["recuperacion_meses"]
-w(f"| Periodo de recuperación | {calc.get('C28', '0,9')} meses | {rec:.1f} meses |" if rec else "| Periodo de recuperación | — | no se recupera |")
-w(f"| ROI del primer año (solo tiempo) | {calc.get('C31', '805 %')} | {roi_real['roi_1']:.0%} |")
-w("\nIncluso con el ruido real, que es menor, la solución propia se recupera en semanas. "
-  "A 3 años sale mejor que un SIEM/SOAR comercial (60.000 €/año + 20.000 € de implantación [D]); ver la hoja «Comparativa» del Excel. "
+w(f"| Periodo de recuperación | {excel_roi['recuperacion']} | " + (f"{rec:.1f} meses |".replace(".", ",") if rec else "no se recupera |"))
+w(f"| ROI del primer año (solo tiempo) | {excel_roi['roi1']} | {roi_real['roi_1'] * 100:.0f} % |")
+w(f"| ROI del primer año (tiempo + coste evitado) | {excel_roi['roi1_evitado']} | — |")
+w(f"\nCon el ruido real medido ({ruido_real:.1%}), hay menos alertas que filtrar y el ahorro es menor: la inversión se recupera en "
+  + (f"unos {rec:.0f} meses" if rec else "más de un año") + f" en lugar de {excel_roi['recuperacion']}. "
+  f"A 3 años, la opción financieramente mejor según la hoja «Comparativa» es **{excel_roi['mejor_3a']}**: coste total "
+  f"{excel_roi['coste_3a'][0]} frente a {excel_roi['coste_3a'][1]} de un SIEM/SOAR comercial (60.000 €/año + 20.000 € de implantación [D]). "
   "Las horas liberadas se reasignan a investigación, no a reducir plantilla.")
+w("\n**Retorno del bloqueo automático** (hoja «Automatización», directriz del director de las 0:03; 120 bloqueos manuales al mes de 25 min [D]):\n")
+w("| Escenario | Ahorro anual en tiempo | Coste evitado anual | Inversión del módulo | Recuperación | ROI 1.er año |\n|---|---|---|---|---|---|")
+for a_ in excel_roi["auto"]:
+    w(f"| {a_['escenario']} | {a_['ahorro']} | {a_['evitado']} | {a_['inversion']} | {a_['recuperacion']} | {a_['roi1']} |")
+w("\nEl escenario optimista no se usa para decidir. Con salvaguardas (lista blanca, aprobación humana en activos críticos, registro y botón de liberar), "
+  "el módulo se paga en unos 2 meses en el escenario realista.")
 
 w("\n## 4. Análisis forense")
 w("### 4.1 La cadena *moreno")
@@ -199,8 +236,11 @@ w(f"- **Propagación:** una cuenta y un equipo nuevos cada ~{int(p.get('min_medi
 w("- **Dos vías de entrada que se alternan:**")
 w("  - Robo de credenciales: phishing → fuerza bruta → acceso no reconocido → lectura → mando y control → impacto.")
 w("  - Explotación del equipo: sondeo de puertos → petición con explotación → proceso anómalo → mando y control → impacto.")
-w(f"- **Siguiente víctima estimada:** hacia las {str(p.get('siguiente_victima_estimada_aviso', ''))[11:16]} (hora de aviso). "
-  f"Ya en cola automáticamente y sin cadena completa todavía: {', '.join(nuevas) or 'ninguna'}.\n")
+prevista = str(p.get('siguiente_victima_estimada_aviso', ''))
+no_llego = bool(prevista) and datetime.strptime(d["generado"], "%d/%m/%Y %H:%M") > datetime.fromisoformat(prevista[:16])
+w(f"- **Siguiente víctima estimada:** hacia las {prevista[11:16]} (hora de aviso)"
+  + (". **No ha llegado:** coincide con el aislamiento que hizo Infra a las 5:30. " if no_llego else ". ")
+  + f"Ya en cola automáticamente y sin cadena completa todavía: {', '.join(nuevas) or 'ninguna'}.\n")
 w("| # | Cuenta | Equipo | Sede | IP relacionada | Primer aviso | Fases | Fase máxima | Detección temprana | Bloqueo |\n|---|---|---|---|---|---|---|---|---|---|")
 for v in victimas:
     ip = ", ".join(d["ips_reconstruidas"].get(v["victima"], [])) or (v["ips"] or "—")
@@ -227,7 +267,7 @@ for o in d["otros_casos"]:
     w(f"| {o['id_alerta_soc']} | {o['usuario']} | {o['equipo'] or '—'} | {o['gravedad']} | {o['titulo']} | {o['aviso']} |")
 w(f"\n**Compromisos aislados, sin cadena previa** (AUTO-06 los descarta y quedan para revisión humana): {', '.join(c['usuario'] for c in d['compromisos_aislados'])}.")
 w("\n**Incidente interno:** el 03/11 a las 12:30, la cuenta del equipo intentó reenviar la ficha de credenciales a una Gmail personal. "
-  "La regla de transporte lo bloqueó, pero la clave de la API acabó revocada (ver anexo de evidencias).")
+  "La regla de transporte lo bloqueó. Después la API empezó a rechazar la clave; la relación entre ambos hechos es una hipótesis, no está confirmada (ver anexo A).")
 
 w("\n### 4.4 Impacto para la empresa")
 w(f"- **Disponibilidad:** {n_vict} equipos y servidores de ficheros, aplicaciones y copias comprometidos en {n_sedes} sedes; reapertura condicionada a identidades verificadas.")
@@ -235,6 +275,12 @@ w("- **Confidencialidad:** posible extracción (18 GB) de contratos, informació
 w("- **Integridad:** documento de pagos alterado y copias con retención reducida. No hay RTO/RPO acordados.")
 w("- **Recuperabilidad:** sin una restauración reciente probada; las copias no son fiables hasta validarlas en un entorno aislado.")
 
+w("\n### 4.5 Respuesta al director: de dónde viene, cómo llegó y qué hacer (correo de las 8:07)")
+w("- **De dónde viene (confirmado en los datos):** de una infraestructura externa. Las IPs relacionadas con la cadena están en rangos de documentación (192.0.2.x, 198.51.100.x, 203.0.113.x) y la posible salida de datos fue hacia 198.51.100.77. La atribución a un actor concreto no está confirmada.")
+w("- **Cómo llegó (dos vías observadas en cada víctima):** 1) **robo de credenciales**: correo con formulario falso → fuerza bruta → acceso no reconocido; 2) **explotación del equipo**: sondeo de puertos → petición con patrón de explotación → proceso anómalo. "
+  f"El acceso inicial de la intrusión que llega a LAB-FS-01 sigue abierto entre tres hipótesis del director (soporte remoto no validado, credenciales expuestas, archivo por correo). La que más encaja con nuestros datos es la de credenciales robadas por phishing ({sum(1 for v in victimas if v["min_ganados"])} de {n_vict} víctimas empiezan así; el resto, por explotación del equipo), pero falta la prueba que la confirme.")
+w("- **Qué hacer:** ver §7. En el orden de prioridad: revocar sesiones y credenciales de las cuentas *moreno, aislar los LAB-* afectados, bloquear 198.51.100.77, restaurar desde copias verificadas y reforzar el MFA y el filtrado de phishing.")
+w("- **Contención real:** a las 5:30 el director informó de que Infra había bloqueado el ataque y aislado el servidor. Los bloqueos de usuario del equipo siguen en cola (API en 401).")
 w("\n## 5. Respuesta y controles implantados")
 acc = d["acciones"]
 w(f"- **Bloqueo automático (BD):** AUTO-05 (crítico verificado) y AUTO-06 (correlación). Decisiones: "
@@ -245,18 +291,18 @@ w("- **Autenticidad del remitente:** SPF pass de protection.outlook.com, AuthAs 
 if DEMO_TXT:
     w(f"- **{DEMO_TXT}** Comandos: `demo/bloqueador_simulado.py` y `demo/demo_bloqueos.py`; las filas llevan `simulacion = TRUE` y no afectan a la cola real.")
 w("- **Buzón:** 10 carpetas y un flujo de Power Automate que ordena cada correo nuevo 5 min después de que lo capture la ingesta.")
-w("- **Directrices de crisis:** respondidas la mayoría; «Solicitud externa no verificada» solo con acuse y «Criterios de reapertura» y «Análisis de la causa inicial» sin responder (ver anexo A).")
+w("- **Directrices de crisis:** todas respondidas. La reapertura (5:58) y la primera evaluación de la solicitud externa (6:01) salieron fuera de plazo; la causa inicial se amplió y corrigió a las 5:59 (`docs/directrices.md`).")
 
 w("\n## 6. Lo que no salió bien y lecciones aprendidas")
 for problema, leccion in [
-    ("La ficha con credenciales se intentó reenviar a una Gmail desde la cuenta del equipo; la API se revocó", "Las credenciales solo en `.env` y gestores de secretos; nunca reenviar fichas. Tratar cualquier exposición como un compromiso y pedir rotación por un canal seguro"),
-    ("0 bloqueos ejecutados: 13 decisiones correctas quedaron en cola", "Tener una vía alternativa para contener (manual con registro) y vigilar la salud de la API (401) con una alarma"),
+    ("La ficha con credenciales se intentó reenviar a una Gmail desde la cuenta del equipo; después la API rechazó la clave (relación no confirmada)", "Las credenciales solo en `.env` y gestores de secretos; nunca reenviar fichas. Tratar cualquier exposición como un compromiso y pedir rotación por un canal seguro"),
+    (f"0 bloqueos ejecutados: {sum(1 for a in d['acciones'] if a['estado'] == 'PENDIENTE')} decisiones quedaron en cola", "Tener una vía alternativa para contener (manual con registro) y vigilar la salud de la API (401) con una alarma"),
     ("La extracción de campos estaba rota (usuario «relacionada» en 110/110) hasta la migración 007", "Probar con correos reales desde el principio, no solo con datos sintéticos"),
     ("La corroboración contaba los reenvíos como alertas nuevas (falso positivo de slopez)", "Contar por identificador de alerta; las pruebas de regresión antes de activar reglas que bloquean"),
     ("La ingesta dependía de un cron de GitHub que no se ejecutaba solo", "Ingesta directa de Power Automate a la BD y monitorizar el retraso (último correo recibido)"),
     ("El inicio de sesión de Graph falló; no había conexión de PostgreSQL en Power Automate", "Validar antes del evento las licencias, conectores y permisos (Mail.ReadWrite, Premium)"),
     ("Error de operación en Outlook: «Copiar» en lugar de «Mover» (30 copias)", "Confirmar la acción antes de las operaciones masivas; preferir la automatización revisable a los clics masivos"),
-    ("Directrices con plazos de 10/20 min y equipo saturado: 2 sin responder", "Reparto de guardias y plantillas de acuse; un responsable de comunicación con dirección"),
+    ("Directrices con plazos de 10/20 min y equipo saturado: 2 respondidas fuera de plazo y 1 solo con acuse durante 2,5 h", "Reparto de guardias y plantillas de acuse; un responsable de comunicación con dirección"),
 ]:
     w(f"- **{problema}.** → {leccion}.")
 
@@ -268,7 +314,7 @@ for r in [
     "Bloquear la IP 198.51.100.77 y las IPs de la cadena tras revisión humana (las IPs no se bloquean solas).",
     "Verificar con el banco el pago desviado y congelar los cambios de datos maestros de proveedores.",
     "Jurídico y protección de datos: decidir sobre la notificación (72 h) y la comunicación a afectados con hechos verificados.",
-    "Mejoras de prioridad alta del Excel (6.100 €): plantillas de notificación, lista blanca y aprobación, clasificación INCIBE y detección de phishing.",
+    f"Mejoras de prioridad alta del Excel ({es(xl.get('mejoras', {}).get('D16'))}): plantillas de notificación, lista blanca y aprobación, clasificación INCIBE y detección de phishing.",
 ]:
     w(f"- {r}")
 
@@ -304,7 +350,7 @@ e(f"\n*Generado automáticamente el {d['generado']} (hora de Madrid) con `docs/i
   "**Leer antes de cada tarea.** No editar a mano: se regenera con cada «actualiza».*\n")
 e("## Ahora mismo")
 e(f"- **API de bloqueo:** GET `/equipo-2/bloqueos` → **{api.get('http')}** ({api.get('detalle', '')}). "
-  + ("Clave revocada: no se puede ejecutar ningún bloqueo." if api.get("http") == 401 else ""))
+  + ("La API rechaza la clave (causa no confirmada) y la organización no la repondrá: no se puede ejecutar ningún bloqueo real." if api.get("http") == 401 else ""))
 e(f"- **Ingesta:** último correo guardado a las {str(ing.get('ultima_insercion', ''))[11:16]} "
   f"({int(ing.get('min_sin_ingesta') or 0)} min sin correos nuevos en la BD). "
   "El cron de `postgres-sync` no se ejecuta solo: lanzar *Run workflow* si hace falta.")

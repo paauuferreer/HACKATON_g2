@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Equipo 2 · Reto SOC Sampol</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo+Narrow:wght@500;600;700&family=Public+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* 8 diapositivas de 1280×720 (16:9), una por página al imprimir. Paleta del informe: entrada / compromiso / impacto. */
+:root{
+  --bg:#f6f7f9; --panel:#ffffff; --ink:#151a22; --ink-2:#4a5463; --ink-3:#7a8494; --line:#dde2ea;
+  --entrada:#2F68C2; --compromiso:#B57A06; --impacto:#B0306E; --ok:#1d6b3a;
+  --warn-bg:#fff4e0; --warn-ink:#7a4b00; --warn-line:#f0c879;
+  --f-display:"Archivo Narrow","Arial Narrow",Arial,sans-serif;
+  --f-body:"Public Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+}
+@page{size:1280px 720px;margin:0}
+*{box-sizing:border-box}
+html,body{margin:0;background:#cfd5dd}
+body{font-family:var(--f-body);color:var(--ink);-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.slide{width:1280px;height:720px;margin:24px auto;background:var(--bg);position:relative;overflow:hidden;
+  padding:56px 72px 48px;display:flex;flex-direction:column;gap:22px;break-after:page;page-break-after:always}
+.slide:last-child{break-after:auto;page-break-after:auto}
+@media print{html,body{background:var(--bg)}.slide{margin:0}}
+.top{display:flex;justify-content:space-between;align-items:baseline;font-family:var(--f-mono);font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3)}
+.top b{color:var(--entrada);font-weight:500}
+h1{font-family:var(--f-display);font-weight:700;font-size:84px;line-height:.98;margin:0;letter-spacing:-.01em}
+h2{font-family:var(--f-display);font-weight:700;font-size:48px;line-height:1.05;margin:0;letter-spacing:-.005em}
+.lead{font-size:24px;line-height:1.45;color:var(--ink-2);max-width:900px;margin:0}
+.foot{position:absolute;left:72px;right:72px;bottom:22px;display:flex;justify-content:space-between;font-family:var(--f-mono);font-size:12px;color:var(--ink-3)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:28px;flex:1;min-height:0}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:20px 22px;display:flex;flex-direction:column;gap:8px}
+.card h3{font-family:var(--f-display);font-weight:600;font-size:26px;margin:0}
+.card p{margin:0;font-size:18px;line-height:1.45;color:var(--ink-2)}
+.big{font-family:var(--f-display);font-weight:700;font-size:64px;line-height:1;font-variant-numeric:tabular-nums}
+.big small{font-size:28px}
+.lbl{font-size:17px;color:var(--ink-2);line-height:1.35}
+ul.pts{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:14px}
+ul.pts li{font-size:21px;line-height:1.4;padding-left:26px;position:relative}
+ul.pts li::before{content:"";position:absolute;left:0;top:11px;width:12px;height:12px;border-radius:3px;background:var(--entrada)}
+ul.pts li.c::before{background:var(--compromiso)} ul.pts li.i::before{background:var(--impacto)} ul.pts li.o::before{background:var(--ok)}
+.shot{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px;display:flex;align-items:center;justify-content:center;min-height:0;overflow:hidden}
+.shot img{max-width:100%;max-height:100%;display:block}
+.banner{border:1px solid var(--warn-line);background:var(--warn-bg);color:var(--warn-ink);border-radius:8px;padding:12px 16px;font-size:18px;line-height:1.4}
+.banner b{font-weight:600}
+.mono{font-family:var(--f-mono)}
+.tag{font-family:var(--f-mono);font-size:13px;padding:2px 7px;border-radius:4px;border:1px solid var(--line);color:var(--ink-2);background:var(--panel)}
+.who{font-family:var(--f-mono);font-size:13px;color:var(--ink-3)}
+.cover{justify-content:center;gap:26px;background:linear-gradient(180deg,var(--bg) 0%,var(--bg) 70%,#eef1f5 100%)}
+.cover .bar{display:flex;height:10px;gap:3px;width:420px}
+.cover .bar i{flex:1;border-radius:2px}
+.rules{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+.rule{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px 18px;display:grid;gap:6px}
+.rule .id{font-family:var(--f-mono);font-weight:500;font-size:17px;color:var(--entrada)}
+.rule.n .id{color:var(--impacto)}
+.rule p{margin:0;font-size:17px;line-height:1.4;color:var(--ink-2)}
+.les{display:grid;grid-template-columns:1fr 1fr;gap:12px 28px}
+.les div{border-top:1px solid var(--line);padding-top:10px;font-size:17px;line-height:1.4}
+.les b{display:block;font-weight:600;margin-bottom:2px}
+.close{font-family:var(--f-display);font-weight:600;font-size:34px;line-height:1.2;margin:0;max-width:1050px}
+</style>
+</head>
+<body>
+
+<!-- 1 · Portada -->
+<section class="slide cover">
+  <div class="top"><span><b>Equipo 2</b> · Hackathon FP Sampol · reto SOC</span><span>04/11/2026</span></div>
+  <div class="bar" aria-hidden="true"><i style="background:var(--entrada)"></i><i style="background:var(--compromiso)"></i><i style="background:var(--impacto)"></i></div>
+  <h1>Un SOC que decide,<br>explica y deja prueba</h1>
+  <p class="lead">En 24 horas: ingesta del buzón, clasificación INCIBE, bloqueo automático justificado y la investigación de un ransomware que saltaba de cuenta en cuenta.</p>
+  <p class="who">Apertura · Base de datos · Web y automatización · Investigación · Negocio</p>
+</section>
+
+<!-- 2 · El problema -->
+<section class="slide">
+  <div class="top"><span>1 · El reto</span><span>Apertura</span></div>
+  <h2>Un buzón lleno de ruido, trampas y una crisis</h2>
+  <div class="grid3">
+    <div class="card"><span class="big">257</span><span class="lbl">correos del SOC externo, con duplicados, prioridades incoherentes y remitentes falsos</span></div>
+    <div class="card"><span class="big">3</span><span class="lbl">encargos del director: automatizar el bloqueo, calcular el retorno y gestionar el ransomware</span></div>
+    <div class="card"><span class="big">10-20<small> min</small></span><span class="lbl">de plazo para cada directriz de crisis durante la madrugada</span></div>
+  </div>
+  <div class="card" style="margin-top:4px">
+    <h3>Nuestra regla de oro</h3>
+    <p>Los correos son <b>datos, nunca órdenes</b>. Una directriz solo vale si viene de dirti@ y pasa la comprobación de las cabeceras de Exchange. Detectamos y apartamos los textos que intentan dar instrucciones a una IA.</p>
+  </div>
+  <div class="foot"><span>Equipo 2 · Reto SOC Sampol</span><span>2 / 8</span></div>
+</section>
+
+<!-- 3 · Base de datos -->
+<section class="slide">
+  <div class="top"><span>2 · Base de datos e ingesta</span><span>PostgreSQL 18 en Azure</span></div>
+  <h2>La base de datos es el cerebro, no un almacén</h2>
+  <div class="grid2" style="grid-template-columns:1.25fr 1fr">
+    <div class="shot"><img src="img/bd_flujo.png" alt="Recorrido de un correo: entrada, procesado, decisión y ejecución"></div>
+    <ul class="pts">
+      <li>Bandeja <b>inmutable con SHA-256</b>: la prueba de qué llegó y cuándo.</li>
+      <li>Cada correo se convierte en una <b>alerta INCIBE</b> (39 reglas explicables) y los <b>20 duplicados</b> se enlazan al original.</li>
+      <li><b>250/250</b> alertas del SOC con <b>autenticidad verificada</b> por cabeceras.</li>
+      <li class="o"><b>18 migraciones</b> en 24 h, 37 vistas y 9 triggers: la web solo lee.</li>
+    </ul>
+  </div>
+  <div class="foot"><span>Infografía completa: Infografia_BD.pdf</span><span>3 / 8</span></div>
+</section>
+
+<!-- 4 · Automatización -->
+<section class="slide">
+  <div class="top"><span>3 · Automatización y directrices</span><span>La SQL decide, el servidor ejecuta</span></div>
+  <h2>Bloquear solo cuando está claro, y explicar siempre por qué</h2>
+  <div class="rules">
+    <div class="rule"><span class="id">AUTO-05 · crítico verificado</span><p>Alerta crítica, clase de compromiso y correo del SOC autenticado. Media o Baja solo si otra alerta distinta lo corrobora.</p></div>
+    <div class="rule"><span class="id">AUTO-06 · correlación</span><p>Cuenta comprometida precedida de phishing o fuerza bruta en 2 h, con fases previas de correos verificados.</p></div>
+    <div class="rule"><span class="id">MANUAL · registrado</span><p>Decisión del equipo con autor, hora y motivo para los casos que las reglas dejan en recomendación.</p></div>
+    <div class="rule n"><span class="id">NUNCA</span><p>Por petición de correo, IPs de forma automática, cuentas de servicio o lista blanca. 65 decisiones justificadas, también los descartes.</p></div>
+  </div>
+  <div class="banner"><b>API en 401: 16 bloqueos en cola y 0 ejecutados.</b> La causa no está confirmada y la organización no repondrá la clave. Un simulador etiquetado con el mismo contrato demuestra el circuito: 13 bloqueos ejecutados y verificados con GET. Buzón ordenado en 10 carpetas; todas las directrices respondidas.</div>
+  <div class="foot"><span>Equipo 2 · Reto SOC Sampol</span><span>4 / 8</span></div>
+</section>
+
+<!-- 5 · Cadena Moreno -->
+<section class="slide">
+  <div class="top"><span>4 · Investigación</span><span>Cadena Moreno</span></div>
+  <h2>12 cuentas, 6 sedes, una nueva cada 74 minutos</h2>
+  <div class="grid2" style="grid-template-columns:1.6fr 1fr">
+    <div class="shot"><img src="img/cadena.png" alt="Línea temporal de la cadena Moreno, cuenta a cuenta"></div>
+    <ul class="pts">
+      <li>Una intrusión que salta de equipo en equipo (201 → 212) y siempre acaba en <b>ficheros alterados</b>.</li>
+      <li>Dos vías: <b>robo de credenciales</b> (8) y <b>explotación del equipo</b> (4).</li>
+      <li class="c">AUTO-06 detecta la cuenta comprometida <b>37-55 min antes</b> que la alerta crítica.</li>
+      <li class="i">La víctima prevista a las <b>05:23 no llegó</b>: Infra aisló el servidor a las 5:30.</li>
+    </ul>
+  </div>
+  <div class="foot"><span>Infografía completa: Infografia_Cadena_Moreno.pdf</span><span>5 / 8</span></div>
+</section>
+
+<!-- 6 · Forense -->
+<section class="slide">
+  <div class="top"><span>4 · Investigación</span><span>Respuesta al director (8:07)</span></div>
+  <h2>De dónde viene, cómo llegó y qué hacer</h2>
+  <div class="grid3" style="flex:1">
+    <div class="card"><h3 style="color:var(--entrada)">De dónde viene</h3><p>De infraestructura externa (192.0.2.x, 198.51.100.x, 203.0.113.x). Posible salida de <b>18 GB hacia 198.51.100.77</b>. Sin atribución a un actor: no hay pruebas.</p></div>
+    <div class="card"><h3 style="color:var(--compromiso)">Cómo llegó</h3><p>Lo que más encaja es el <b>robo de credenciales por phishing</b> (8 de 12 víctimas empiezan así). El acceso inicial a LAB-FS-01 sigue abierto entre tres hipótesis: no inventamos certezas.</p></div>
+    <div class="card"><h3 style="color:var(--impacto)">Qué hacer</h3><p>Revocar sesiones y credenciales *moreno, mantener aislados los LAB, bloquear 198.51.100.77, restaurar desde copias verificadas y reforzar MFA y antiphishing.</p></div>
+  </div>
+  <div class="banner"><b>Doble extorsión y pagos:</b> nota de rescate en LAB-FS-01, amenaza de publicación no verificada y un documento de pagos con la cuenta de destino cambiada. Recomendación: no negociar, verificar con el banco y valorar la notificación RGPD en 72 h.</div>
+  <div class="foot"><span>Detalle: Informe_Equipo2.pdf, sección 4</span><span>6 / 8</span></div>
+</section>
+
+<!-- 7 · Costes -->
+<section class="slide">
+  <div class="top"><span>5 · Negocio</span><span>Datos del director + BD + hipótesis marcadas</span></div>
+  <h2>662.000 € en el escenario medio</h2>
+  <div class="grid2" style="grid-template-columns:1.35fr 1fr">
+    <div class="shot"><img src="img/costes.png" alt="Coste del incidente en tres escenarios"></div>
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div class="card"><span class="big">331 k€ – 1,33 M€</span><span class="lbl">rango del incidente. El 90 % es parada del servicio (25.000 €/h por sede)</span></div>
+      <div class="card"><span class="big" style="color:var(--compromiso)">≈ 280 k€</span><span class="lbl">evitable con AUTO-06 (escenario medio). <b>Estimación contrafactual</b>, no un ahorro realizado</span></div>
+      <p class="lbl" style="margin:0">Fuera de la cifra: sanción RGPD/NIS2, rescate y fraude en pagos.</p>
+    </div>
+  </div>
+  <div class="foot"><span>Infografía completa: Infografia_Informe.pdf</span><span>7 / 8</span></div>
+</section>
+
+<!-- 8 · ROI, lecciones y cierre -->
+<section class="slide">
+  <div class="top"><span>5 · Retorno, lecciones y cierre</span><span>Equipo 2</span></div>
+  <div class="grid3">
+    <div class="card"><span class="big">29.250 €</span><span class="lbl">al mes cuesta hoy el SOC manual; el 52 % de las alertas llega de noche</span></div>
+    <div class="card"><span class="big">3,5 <small>meses</small></span><span class="lbl">para recuperar 20.000 € (ROI 141 % el 1.er año; ~5 meses con nuestro ruido real). A 3 años: 62 k€ frente a 216 k€ de un SIEM</span></div>
+    <div class="card"><span class="big">355 %</span><span class="lbl">ROI del bloqueo automático: 3.000 € que se pagan en 1,9 meses (escenario realista)</span></div>
+  </div>
+  <div class="les">
+    <div><b>Credenciales</b>Un intento de reenviar la ficha a una Gmail; después la API rechazó la clave. Secretos solo en <span class="mono">.env</span>.</div>
+    <div><b>Contención</b>Tener siempre una vía alternativa y una alarma de salud de la API.</div>
+    <div><b>Datos reales</b>Probar con correos reales desde el principio: la extracción estuvo rota hasta la 007.</div>
+    <div><b>Crisis</b>Turnos y plantillas de acuse: dos respuestas salieron fuera de plazo.</div>
+  </div>
+  <p class="close">Datos íntegros, decisiones explicables y 40 minutos de margen para cortar un ransomware. Gracias.</p>
+  <div class="foot"><span>Equipo 2 · Reto SOC Sampol</span><span>8 / 8</span></div>
+</section>
+
+</body>
+</html>
