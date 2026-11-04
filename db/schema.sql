@@ -3157,3 +3157,1087 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- ============================================================================
+-- 011_organizacion_outlook.sql — El buzón de Outlook se ordena según la base de datos (decisión D-008)
+--
+-- Petición: que la bandeja de entrada esté organizada con carpetas y etiquetas según el correo que llega.
+-- Diseño:
+--   * CARPETA  = qué hay que hacer con el correo (una por correo): directrices, SOC por urgencia,
+--                solicitudes, ruido, cuarentena, no SOC.
+--   * ETIQUETAS (categorías de Outlook, varias por correo) = qué es: gravedad, clase INCIBE y señales
+--                (verificado, sospechoso, duplicado, inconsistente, bloqueo...).
+--   * Lo decide SOLO la base de datos (misma clasificación que el cuadro de mando). El script
+--     soc/outlook_organizar.py lo aplica con Microsoft Graph y registra cada cambio.
+--   * Solo se mueven correos que ya están guardados en bandeja_entrada: el flujo de Power Automate
+--     que se dispara en la Bandeja de entrada nunca pierde un correo.
+-- Todo es configuración editable (nombres, colores, remitentes). Idempotente.
+-- ============================================================================
+
+-- ----------------------------------------------------------------------------
+-- 1. CONFIGURACIÓN
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS config_outlook (
+    id                      SMALLINT PRIMARY KEY DEFAULT 1 CHECK (id = 1),
+    organizacion_activa     BOOLEAN NOT NULL DEFAULT TRUE,       -- interruptor general desde la BD
+    remitentes_directrices  TEXT[]  NOT NULL DEFAULT '{dirti@sampol.com}',
+    remitentes_soc          TEXT[]  NOT NULL DEFAULT '{soc-hackaton@sampol.com}',
+    fecha_actualizacion     TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+INSERT INTO config_outlook (id) VALUES (1) ON CONFLICT (id) DO NOTHING;
+
+-- Carpetas: ruta relativa a la Bandeja de entrada ("/" separa subcarpetas)
+CREATE TABLE IF NOT EXISTS outlook_carpetas (
+    codigo      VARCHAR(30) PRIMARY KEY,
+    ruta        VARCHAR(200) NOT NULL UNIQUE,
+    descripcion TEXT NOT NULL,
+    orden       SMALLINT NOT NULL
+);
+INSERT INTO outlook_carpetas (codigo, ruta, descripcion, orden) VALUES
+    ('DIRECTRICES',  '01 Directrices',             'Correos del director de TI', 1),
+    ('SOC_CRITICAS', '02 SOC/Críticas y altas',    'Alertas del SOC críticas o altas pendientes de acción', 2),
+    ('SOC_MEDIAS',   '02 SOC/Medias y bajas',      'Alertas del SOC de gravedad media o baja', 3),
+    ('SOC_REVISION', '02 SOC/Revisión manual',     'Correos del SOC que el sistema no pudo interpretar', 4),
+    ('SOC_CERRADAS', '02 SOC/Cerradas',            'Alertas del SOC cerradas', 5),
+    ('SOLICITUDES',  '03 Solicitudes (SOL)',       'Peticiones de bloqueo o liberación: nunca se ejecutan solas', 6),
+    ('RUIDO',        '04 Ruido',                   'Duplicados, informativos y falsas alarmas', 7),
+    ('CUARENTENA',   '05 Cuarentena',              'Correos sospechosos, manipulados o con autenticidad fallida', 8),
+    ('NO_SOC',       '06 No SOC',                  'Organización, avisos de servicios y otros', 9)
+ON CONFLICT (codigo) DO NOTHING;
+
+-- Etiquetas (categorías de Outlook). color = preset de Microsoft Graph (preset0 rojo ... preset24)
+CREATE TABLE IF NOT EXISTS outlook_categorias (
+    grupo   VARCHAR(10) NOT NULL CHECK (grupo IN ('GRAVEDAD', 'INCIBE', 'SENAL')),
+    clave   VARCHAR(50) NOT NULL,
+    nombre  VARCHAR(60) NOT NULL UNIQUE,
+    color   VARCHAR(10) NOT NULL CHECK (color ~ '^preset([0-9]|1[0-9]|2[0-4])$'),
+    orden   SMALLINT NOT NULL,
+    PRIMARY KEY (grupo, clave)
+);
+INSERT INTO outlook_categorias (grupo, clave, nombre, color, orden) VALUES
+    ('GRAVEDAD', 'CRITICO',     'Gravedad: Crítica',     'preset0',  1),
+    ('GRAVEDAD', 'ALTO',        'Gravedad: Alta',        'preset1',  2),
+    ('GRAVEDAD', 'MEDIO',       'Gravedad: Media',       'preset3',  3),
+    ('GRAVEDAD', 'BAJO',        'Gravedad: Baja',        'preset4',  4),
+    ('GRAVEDAD', 'INFORMATIVO', 'Gravedad: Informativa', 'preset12', 5),
+    ('SENAL', 'DIRECTRIZ',         'Directriz',                 'preset10', 30),
+    ('SENAL', 'VERIFICADO',        'Remitente verificado',      'preset19', 31),
+    ('SENAL', 'NO_VERIFICADO',     'Remitente sin verificar',   'preset13', 32),
+    ('SENAL', 'SOSPECHOSO',        'Sospechoso',                'preset15', 33),
+    ('SENAL', 'EXTERNO',           'Remitente externo',         'preset11', 34),
+    ('SENAL', 'INCONSISTENTE',     'Inconsistente',             'preset2',  35),
+    ('SENAL', 'DUPLICADO',         'Duplicado',                 'preset13', 36),
+    ('SENAL', 'SOLICITUD',         'Solicitud: no ejecutar',    'preset17', 37),
+    ('SENAL', 'FALSA_ALARMA',      'Falsa alarma',              'preset12', 38),
+    ('SENAL', 'REVISION',          'Pendiente de revisión',     'preset18', 39),
+    ('SENAL', 'BLOQUEO_PENDIENTE', 'Bloqueo en curso',          'preset16', 40),
+    ('SENAL', 'BLOQUEO',           'Bloqueo aplicado',          'preset20', 41),
+    ('SENAL', 'RECOMENDACION',     'Recomendación de bloqueo',  'preset21', 42),
+    ('SENAL', 'NO_SOC',            'No SOC',                    'preset14', 43)
+ON CONFLICT (grupo, clave) DO NOTHING;
+
+-- Una etiqueta por clase INCIBE, con el nombre del catálogo
+INSERT INTO outlook_categorias (grupo, clave, nombre, color, orden)
+SELECT 'INCIBE', c.clase_id, left('INCIBE: ' || c.nombre, 60), v.color, 10 + coalesce(c.orden, 0)
+FROM incibe_clases c
+JOIN (VALUES ('CONTENIDO_ABUSIVO', 'preset9'), ('CONTENIDO_DANINO', 'preset24'), ('OBTENCION_INFORMACION', 'preset5'),
+             ('INTENTO_INTRUSION', 'preset7'), ('INTRUSION', 'preset22'), ('DISPONIBILIDAD', 'preset6'),
+             ('COMPROMISO_INFORMACION', 'preset23'), ('FRAUDE', 'preset8'), ('VULNERABLE', 'preset21'),
+             ('OTROS', 'preset12')) AS v(clase_id, color) ON v.clase_id = c.clase_id
+ON CONFLICT (grupo, clave) DO NOTHING;
+
+-- ----------------------------------------------------------------------------
+-- 2. REGISTRO DE LO APLICADO EN OUTLOOK (auditoría y control de cambios)
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS outlook_sincronizacion (
+    correo_id        UUID PRIMARY KEY REFERENCES bandeja_entrada(correo_id),
+    carpeta_codigo   VARCHAR(30) REFERENCES outlook_carpetas(codigo),
+    categorias       TEXT[] NOT NULL DEFAULT '{}',
+    huella           VARCHAR(32) NOT NULL,            -- md5(carpeta + etiquetas): detecta cambios
+    graph_message_id TEXT,
+    estado           VARCHAR(15) NOT NULL CHECK (estado IN ('APLICADO', 'NO_ENCONTRADO', 'ERROR')),
+    detalle          TEXT,
+    intentos         INTEGER NOT NULL DEFAULT 1,
+    fecha            TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_outlook_sinc_estado ON outlook_sincronizacion (estado, fecha);
+
+CREATE OR REPLACE FUNCTION registrar_sincronizacion_outlook(
+    p_correo_id UUID, p_huella TEXT, p_carpeta TEXT, p_categorias TEXT[],
+    p_graph_id TEXT, p_estado TEXT, p_detalle TEXT)
+RETURNS VOID AS $$
+    INSERT INTO outlook_sincronizacion
+        (correo_id, carpeta_codigo, categorias, huella, graph_message_id, estado, detalle, intentos, fecha)
+    VALUES (p_correo_id, p_carpeta, coalesce(p_categorias, '{}'), p_huella, p_graph_id, p_estado, left(p_detalle, 1000), 1, now())
+    ON CONFLICT (correo_id) DO UPDATE SET
+        carpeta_codigo   = EXCLUDED.carpeta_codigo,
+        categorias       = EXCLUDED.categorias,
+        graph_message_id = coalesce(EXCLUDED.graph_message_id, outlook_sincronizacion.graph_message_id),
+        estado           = EXCLUDED.estado,
+        detalle          = EXCLUDED.detalle,
+        intentos         = CASE WHEN outlook_sincronizacion.huella = EXCLUDED.huella AND EXCLUDED.estado <> 'APLICADO'
+                                THEN outlook_sincronizacion.intentos + 1 ELSE 1 END,
+        huella           = EXCLUDED.huella,
+        fecha            = now();
+$$ LANGUAGE sql;
+
+-- ----------------------------------------------------------------------------
+-- 3. DESTINO DE CADA CORREO
+-- ----------------------------------------------------------------------------
+CREATE OR REPLACE VIEW v_outlook_destino AS
+WITH cfg AS (SELECT * FROM config_outlook WHERE id = 1),
+base AS (
+    SELECT b.correo_id, b.fecha_hora_correo, lower(btrim(b.remitente_correo)) AS remitente,
+           b.asunto_correo,
+           -- Identificador para encontrar el correo en Outlook (InternetMessageId completo si lo guardó la ingesta)
+           coalesce(nullif(b.cabeceras ->> 'original_message_id', ''), b.id_mensaje_correo) AS id_outlook,
+           a.alerta_id, a.referencia_soc, a.id_alerta_soc, a.soc_peligrosidad, a.criticidad_cuerpo,
+           a.incibe_clase_id, a.estado::text AS estado_alerta, a.es_duplicada, a.id_solicitud,
+           coalesce(cardinality(a.inconsistencias), 0) AS num_inconsistencias,
+           m.descarte_id,
+           -- procesar_correo() marca como sospechoso a todo remitente fuera de remitentes_confianza; para ordenar
+           -- el buzón solo cuentan los motivos reales (instrucciones a una IA, clasificación impuesta...)
+           nullif(btrim(regexp_replace(coalesce(a.motivo_sospecha, m.motivo_sospecha, ''),
+                                       'Remitente fuera de la lista de confianza \([^)]*\)', '', 'g'), '; '), '') AS sospecha_real,
+           coalesce(au.verificada, FALSE) AS verificada, au.motivo AS motivo_autenticidad,
+           -- Un EML sin ninguna cabecera Received no ha pasado por un servidor de correo: inyectado o manipulado
+           (b.eml_raw IS NOT NULL AND NOT EXISTS (
+               SELECT 1 FROM cabeceras_eml(b.correo_id) h WHERE h.nombre = 'received')) AS sin_transporte,
+           lower(btrim(b.remitente_correo)) = ANY (SELECT lower(x) FROM cfg, unnest(cfg.remitentes_directrices) x) AS es_director,
+           lower(btrim(b.remitente_correo)) = ANY (SELECT lower(x) FROM cfg, unnest(cfg.remitentes_soc) x) AS es_soc
+    FROM bandeja_entrada b
+    LEFT JOIN alertas a ON a.correo_id = b.correo_id
+    LEFT JOIN correos_malformados m ON m.correo_id = b.correo_id AND a.alerta_id IS NULL
+    LEFT JOIN LATERAL autenticidad_correo(b.correo_id) au ON TRUE
+),
+clasif AS (
+    SELECT base.*,
+           sospecha_real IS NOT NULL AS marcado_sospechoso,
+           alerta_id IS NOT NULL AND NOT es_soc AND NOT es_director AS formato_soc_suplantado,
+           CASE WHEN verificada THEN 'VERIFICADO'
+                WHEN motivo_autenticidad LIKE 'Remitente externo%' THEN 'EXTERNO'
+                WHEN motivo_autenticidad LIKE 'Sin %' OR motivo_autenticidad LIKE 'Falta %'
+                     OR motivo_autenticidad LIKE 'Correo interno sin%' THEN 'SIN_DATOS'
+                ELSE 'FALLIDA' END AS autenticidad,
+           alerta_id IS NOT NULL AND (
+               id_solicitud IS NOT NULL
+               OR asunto_correo ~* '\mSOL-[0-9]+'
+               OR plegar(asunto_correo) ~ 'solicitud (de )?(bloqueo|liberacion|desbloqueo)') AS es_solicitud,
+           plegar(soc_peligrosidad::text) IN ('critico', 'alto')
+               OR plegar(criticidad_cuerpo) ~ '^(critic|alt)' AS es_grave,
+           EXISTS (SELECT 1 FROM v_bloqueos_activos ba WHERE ba.alerta_id = base.alerta_id AND ba.confirmado) AS bloqueo_confirmado,
+           EXISTS (SELECT 1 FROM v_bloqueos_activos ba WHERE ba.alerta_id = base.alerta_id AND NOT ba.confirmado) AS bloqueo_en_curso,
+           EXISTS (SELECT 1 FROM decisiones_bloqueo_auto d WHERE d.alerta_id = base.alerta_id AND d.decision = 'RECOMENDAR') AS recomendado
+    FROM base
+),
+destino AS (
+    SELECT clasif.*,
+           CASE
+               WHEN alerta_id IS NULL AND descarte_id IS NULL THEN NULL           -- aún sin procesar: se queda en la Bandeja
+               WHEN marcado_sospechoso OR autenticidad = 'FALLIDA' OR sin_transporte THEN 'CUARENTENA'
+               WHEN es_director THEN 'DIRECTRICES'
+               WHEN formato_soc_suplantado THEN 'CUARENTENA'
+               WHEN autenticidad = 'EXTERNO' THEN 'NO_SOC'
+               WHEN descarte_id IS NOT NULL AND es_soc THEN 'SOC_REVISION'
+               WHEN descarte_id IS NOT NULL THEN 'NO_SOC'
+               WHEN es_solicitud THEN 'SOLICITUDES'
+               WHEN es_duplicada OR estado_alerta = 'FALSA_ALARMA' OR soc_peligrosidad::text = 'INFORMATIVO' THEN 'RUIDO'
+               WHEN estado_alerta = 'NO_SOC' THEN 'NO_SOC'
+               WHEN estado_alerta = 'CERRADA' THEN 'SOC_CERRADAS'
+               WHEN es_grave THEN 'SOC_CRITICAS'
+               ELSE 'SOC_MEDIAS'
+           END AS carpeta_codigo,
+           array_remove(ARRAY[
+               CASE WHEN soc_peligrosidad IS NOT NULL THEN 'GRAVEDAD:' || soc_peligrosidad::text END,
+               CASE WHEN incibe_clase_id IS NOT NULL THEN 'INCIBE:' || incibe_clase_id END,
+               CASE WHEN es_director THEN 'SENAL:DIRECTRIZ' END,
+               CASE WHEN marcado_sospechoso OR autenticidad = 'FALLIDA' OR sin_transporte OR formato_soc_suplantado THEN 'SENAL:SOSPECHOSO'
+                    WHEN autenticidad = 'VERIFICADO' THEN 'SENAL:VERIFICADO'
+                    WHEN autenticidad = 'EXTERNO' THEN 'SENAL:EXTERNO'
+                    ELSE 'SENAL:NO_VERIFICADO' END,
+               CASE WHEN num_inconsistencias > 0 THEN 'SENAL:INCONSISTENTE' END,
+               CASE WHEN es_duplicada THEN 'SENAL:DUPLICADO' END,
+               CASE WHEN es_solicitud THEN 'SENAL:SOLICITUD' END,
+               CASE WHEN estado_alerta = 'FALSA_ALARMA' THEN 'SENAL:FALSA_ALARMA' END,
+               CASE WHEN (descarte_id IS NOT NULL AND es_soc) OR estado_alerta = 'EN_REVISION' THEN 'SENAL:REVISION' END,
+               CASE WHEN bloqueo_confirmado THEN 'SENAL:BLOQUEO'
+                    WHEN bloqueo_en_curso THEN 'SENAL:BLOQUEO_PENDIENTE'
+                    WHEN recomendado THEN 'SENAL:RECOMENDACION' END,
+               CASE WHEN (descarte_id IS NOT NULL AND NOT es_soc AND NOT es_director) OR estado_alerta = 'NO_SOC'
+                         OR autenticidad = 'EXTERNO' THEN 'SENAL:NO_SOC' END
+           ], NULL) AS claves
+    FROM clasif
+)
+SELECT d.correo_id, d.fecha_hora_correo, d.remitente, d.id_outlook, d.alerta_id,
+       coalesce(d.referencia_soc, d.id_alerta_soc) AS referencia,
+       d.carpeta_codigo, c.ruta AS carpeta_ruta,
+       coalesce((SELECT array_agg(oc.nombre ORDER BY oc.orden)
+                 FROM outlook_categorias oc
+                 WHERE oc.grupo || ':' || oc.clave = ANY (d.claves)), '{}') AS categorias,
+       CASE d.carpeta_codigo
+           WHEN 'CUARENTENA'   THEN 'Sospechoso: ' || coalesce(d.sospecha_real,
+                                                               CASE WHEN d.sin_transporte THEN 'sin cabeceras de transporte (posible inyección)' END,
+                                                               CASE WHEN d.autenticidad = 'FALLIDA' THEN d.motivo_autenticidad END,
+                                                               CASE WHEN d.formato_soc_suplantado THEN 'formato de alerta SOC enviado por ' || d.remitente || ', que no es el SOC' END,
+                                                               'marcado por las reglas de detección')
+           WHEN 'DIRECTRICES'  THEN 'Remitente de directrices (' || d.autenticidad || ')'
+           WHEN 'NO_SOC'       THEN 'No es una alerta del SOC (' || d.autenticidad || ')'
+           WHEN 'SOC_REVISION' THEN 'Correo del SOC sin formato reconocible: revisión manual'
+           WHEN 'SOLICITUDES'  THEN 'Petición de bloqueo o liberación: no se ejecuta desde el correo'
+           WHEN 'RUIDO'        THEN CASE WHEN d.es_duplicada THEN 'Duplicado de otra alerta'
+                                         WHEN d.estado_alerta = 'FALSA_ALARMA' THEN 'Falsa alarma'
+                                         ELSE 'Alerta informativa' END
+           WHEN 'SOC_CERRADAS' THEN 'Alerta cerrada'
+           WHEN 'SOC_CRITICAS' THEN 'Alerta crítica o alta pendiente'
+           WHEN 'SOC_MEDIAS'   THEN 'Alerta media o baja'
+       END AS motivo,
+       md5(coalesce(d.carpeta_codigo, '') || '|' || array_to_string(ARRAY(SELECT x FROM unnest(d.claves) x ORDER BY x), ',')) AS huella
+FROM destino d
+LEFT JOIN outlook_carpetas c ON c.codigo = d.carpeta_codigo;
+
+-- Lo que el script tiene que aplicar: correos nuevos, con cambios, o con errores que toca reintentar
+CREATE OR REPLACE VIEW v_outlook_pendientes AS
+SELECT d.*
+FROM v_outlook_destino d
+LEFT JOIN outlook_sincronizacion s ON s.correo_id = d.correo_id
+WHERE d.carpeta_codigo IS NOT NULL
+  AND (s.correo_id IS NULL
+       OR s.huella <> d.huella
+       OR (s.estado <> 'APLICADO' AND s.intentos < 6 AND s.fecha < now() - interval '10 minutes'))
+ORDER BY d.fecha_hora_correo;
+
+-- Resumen por carpeta (dashboard y comprobaciones)
+CREATE OR REPLACE VIEW v_outlook_resumen AS
+SELECT c.orden, c.codigo, c.ruta,
+       count(d.correo_id)                                       AS correos,
+       count(s.correo_id) FILTER (WHERE s.estado = 'APLICADO' AND s.huella = d.huella) AS aplicados,
+       count(d.correo_id) FILTER (WHERE s.correo_id IS NULL OR s.huella <> d.huella OR s.estado <> 'APLICADO') AS pendientes
+FROM outlook_carpetas c
+LEFT JOIN v_outlook_destino d ON d.carpeta_codigo = c.codigo
+LEFT JOIN outlook_sincronizacion s ON s.correo_id = d.correo_id
+GROUP BY c.orden, c.codigo, c.ruta;
+
+-- ============================================================================
+-- 012_cadena_ransomware.sql — Fases del ataque y cadena de víctimas (investigación)
+--
+-- El buzón cuenta una intrusión que salta de cuenta en cuenta (jmoreno → amoreno → … → fmoreno,
+-- equipos 201-207 en sedes distintas). Cada víctima recorre las mismas fases:
+--   formulario falso → ráfaga de accesos fallidos → acceso no reconocido → lectura indebida →
+--   mando y control → ejecución/persistencia → alteración de ficheros o pérdida de datos.
+-- Esta migración asigna una fase a cada alerta por su título (tabla editable) y publica vistas para el
+-- panel y la presentación. No bloquea nada. Idempotente.
+-- ============================================================================
+
+-- ----------------------------------------------------------------------------
+-- 1. FASES (inspiradas en la cadena de MITRE ATT&CK; patrón sobre el título plegado)
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS fases_ataque (
+    fase        VARCHAR(30) PRIMARY KEY,
+    orden       SMALLINT NOT NULL,
+    nombre      VARCHAR(60) NOT NULL,
+    patron      TEXT NOT NULL,            -- expresión regular sobre plegar(titulo)
+    descripcion TEXT
+);
+INSERT INTO fases_ataque (fase, orden, nombre, patron, descripcion) VALUES
+    ('RECONOCIMIENTO', 1, 'Reconocimiento',            'sondeo secuencial de puertos|peticion bloqueada con patron de explotacion',
+     'Exploración del equipo antes o durante la intrusión'),
+    ('ACCESO_INICIAL', 2, 'Phishing',                   'formulario falso de acceso',
+     'Correo con formulario falso para robar la contraseña'),
+    ('CREDENCIALES',   3, 'Fuerza bruta',               'rafaga de accesos fallidos',
+     'Prueba masiva de contraseñas sobre la cuenta'),
+    ('COMPROMISO',     4, 'Cuenta comprometida',        'acceso correcto que la persona titular no reconoce|uso confirmado de cuenta administrativa',
+     'Inicio de sesión correcto que el titular no reconoce'),
+    ('RECOLECCION',    5, 'Lectura indebida',           'lectura de documentos fuera de los permisos',
+     'Acceso a documentos fuera de los permisos aprobados'),
+    ('MANDO_CONTROL',  6, 'Mando y control',            'conexiones periodicas a infraestructura de mando',
+     'Balizas periódicas hacia la infraestructura del atacante'),
+    ('EJECUCION',      7, 'Ejecución / persistencia',   'aplicacion ejecuta proceso fuera de su funcion|proceso malicioso detectado|persistencia dirigida',
+     'Procesos maliciosos y persistencia en el equipo'),
+    ('IMPACTO',        8, 'Impacto (cifrado / pérdida)', 'alteracion no autorizada de ficheros|datos perdidos tras averia',
+     'Ficheros alterados o datos perdidos: fase de ransomware')
+ON CONFLICT (fase) DO NOTHING;
+
+CREATE OR REPLACE FUNCTION fase_de_titulo(p_titulo TEXT) RETURNS VARCHAR AS $$
+    SELECT f.fase FROM fases_ataque f
+    WHERE plegar(split_part(coalesce(p_titulo, ''), ' · ', 1)) ~ f.patron
+    ORDER BY f.orden
+    LIMIT 1;
+$$ LANGUAGE sql STABLE;
+
+-- ----------------------------------------------------------------------------
+-- 2. UNA FILA POR ALERTA CON FASE (las de equipo sin usuario se asignan a la víctima de ese equipo)
+-- ----------------------------------------------------------------------------
+CREATE OR REPLACE VIEW v_fases_alertas AS
+WITH base AS (
+    SELECT a.alerta_id, lower(btrim(a.usuario_implicado)) AS usuario, a.equipo_afectado AS equipo, a.sede,
+           coalesce(host(a.ip_afectada), a.ip_raw) AS ip, a.titulo, a.soc_prioridad, a.soc_peligrosidad,
+           a.id_alerta_soc, a.estado,
+           coalesce(a.fecha_hora_evento, a.fecha_hora_correo) AS fecha_evento,
+           a.fecha_hora_correo AS fecha_aviso,
+           fase_de_titulo(a.titulo) AS fase
+    FROM alertas a
+    WHERE NOT a.es_duplicada AND a.estado NOT IN ('FALSA_ALARMA', 'NO_SOC')
+),
+usuario_equipo AS (   -- usuario más frecuente de cada equipo
+    SELECT DISTINCT ON (equipo) equipo, usuario
+    FROM base WHERE usuario LIKE '%@%' AND equipo IS NOT NULL
+    GROUP BY equipo, usuario
+    ORDER BY equipo, count(*) DESC, usuario
+)
+SELECT b.alerta_id, coalesce(nullif(b.usuario, ''), ue.usuario) AS victima, (b.usuario IS NULL OR b.usuario = '') AS usuario_inferido,
+       b.equipo, b.sede, b.ip, b.fase, f.orden AS orden_fase, f.nombre AS nombre_fase,
+       b.titulo, b.soc_prioridad, b.soc_peligrosidad, b.id_alerta_soc, b.estado,
+       b.fecha_evento, b.fecha_aviso
+FROM base b
+JOIN fases_ataque f ON f.fase = b.fase
+LEFT JOIN usuario_equipo ue ON ue.equipo = b.equipo;
+
+-- ----------------------------------------------------------------------------
+-- 3. CADENA: víctimas con al menos 3 fases distintas, en orden de aparición
+--    Horas en Europe/Madrid. "aviso" = cuando llegó el correo (cuando el sistema pudo actuar).
+-- ----------------------------------------------------------------------------
+CREATE OR REPLACE VIEW v_cadena_victimas AS
+WITH v AS (
+    SELECT victima,
+           min(fecha_evento)                                          AS inicio_evento,
+           min(fecha_aviso)                                           AS inicio_aviso,
+           max(fecha_evento)                                          AS fin_evento,
+           count(DISTINCT fase)                                       AS num_fases,
+           max(orden_fase)                                            AS fase_maxima_orden,
+           string_agg(DISTINCT equipo, ', ')                          AS equipos,
+           string_agg(DISTINCT sede, ', ')                            AS sedes,
+           string_agg(DISTINCT ip, ', ')                              AS ips,
+           min(fecha_aviso) FILTER (WHERE fase = 'COMPROMISO')        AS aviso_compromiso,
+           min(fecha_aviso) FILTER (WHERE soc_peligrosidad = 'CRITICO') AS aviso_primera_critica,
+           min(fecha_aviso) FILTER (WHERE fase = 'IMPACTO')           AS aviso_impacto
+    FROM v_fases_alertas
+    WHERE victima IS NOT NULL
+    GROUP BY victima
+    HAVING count(DISTINCT fase) >= 3
+)
+SELECT row_number() OVER (ORDER BY v.inicio_evento)                    AS orden_victima,
+       v.victima, v.equipos, v.sedes, v.ips,
+       v.inicio_evento AT TIME ZONE 'Europe/Madrid'                     AS inicio_evento_local,
+       v.fin_evento AT TIME ZONE 'Europe/Madrid'                        AS fin_evento_local,
+       round(extract(epoch FROM v.inicio_evento - lag(v.inicio_evento) OVER (ORDER BY v.inicio_evento)) / 60) AS min_desde_victima_anterior,
+       v.inicio_aviso AT TIME ZONE 'Europe/Madrid'                      AS inicio_aviso_local,
+       round(extract(epoch FROM v.inicio_aviso - lag(v.inicio_aviso) OVER (ORDER BY v.inicio_evento)) / 60) AS min_aviso_desde_victima_anterior,
+       v.num_fases, f.nombre                                            AS fase_maxima,
+       v.aviso_compromiso AT TIME ZONE 'Europe/Madrid'                  AS aviso_compromiso_local,
+       v.aviso_primera_critica AT TIME ZONE 'Europe/Madrid'             AS aviso_primera_critica_local,
+       round(extract(epoch FROM v.aviso_primera_critica - v.aviso_compromiso) / 60) AS min_ganados_detectando_compromiso,
+       b.estado                                                         AS estado_bloqueo,
+       b.origen                                                         AS origen_bloqueo,
+       coalesce(b.confirmado, FALSE)                                    AS bloqueo_confirmado
+FROM v
+JOIN fases_ataque f ON f.orden = v.fase_maxima_orden
+LEFT JOIN v_bloqueos_activos b ON b.tipo = 'USUARIO' AND b.valor = v.victima;
+
+-- Detalle para la línea temporal: cada fase de cada víctima con el tiempo transcurrido
+CREATE OR REPLACE VIEW v_cadena_ransomware AS
+SELECT c.orden_victima, fa.victima, fa.usuario_inferido, fa.equipo, fa.sede, fa.ip,
+       fa.orden_fase, fa.fase, fa.nombre_fase, fa.titulo, fa.soc_prioridad, fa.soc_peligrosidad, fa.id_alerta_soc,
+       fa.fecha_evento AT TIME ZONE 'Europe/Madrid' AS evento_local,
+       fa.fecha_aviso  AT TIME ZONE 'Europe/Madrid' AS aviso_local,
+       round(extract(epoch FROM fa.fecha_evento - lag(fa.fecha_evento) OVER w) / 60) AS min_desde_fase_anterior,
+       round(extract(epoch FROM fa.fecha_evento - first_value(fa.fecha_evento) OVER w) / 60) AS min_desde_inicio_victima,
+       fa.alerta_id
+FROM v_fases_alertas fa
+JOIN v_cadena_victimas c ON c.victima = fa.victima
+WINDOW w AS (PARTITION BY fa.victima ORDER BY fa.fecha_evento, fa.orden_fase);
+
+-- Ritmo de propagación y hora estimada de la siguiente víctima (media de los saltos), en hora del evento
+-- y en hora de aviso (llegada del correo, la que sirve para actuar en directo)
+CREATE OR REPLACE VIEW v_cadena_prediccion AS
+WITH u AS (
+    SELECT orden_victima, victima, inicio_evento_local, min_desde_victima_anterior,
+           inicio_aviso_local, min_aviso_desde_victima_anterior
+    FROM v_cadena_victimas
+)
+SELECT count(*)                                                      AS victimas,
+       round(avg(min_desde_victima_anterior))                        AS min_medios_entre_victimas,
+       max(inicio_evento_local)                                      AS inicio_ultima_victima,
+       (SELECT victima FROM u ORDER BY orden_victima DESC LIMIT 1)   AS ultima_victima,
+       max(inicio_evento_local) + make_interval(mins => round(avg(min_desde_victima_anterior))::int)
+                                                                     AS siguiente_victima_estimada_evento,
+       round(avg(min_aviso_desde_victima_anterior))                  AS min_medios_entre_avisos,
+       max(inicio_aviso_local) + make_interval(mins => round(avg(min_aviso_desde_victima_anterior))::int)
+                                                                     AS siguiente_victima_estimada_aviso
+FROM u;
+
+-- ============================================================================
+-- 013_auto06_correlacion.sql — Regla AUTO-06: bloqueo temprano por correlación de fases (D-009)
+--
+-- En la cadena *moreno, la cuenta se ve comprometida ~40 min ANTES de la primera alerta crítica
+-- (phishing → ráfaga de fallos → acceso correcto que el titular no reconoce → … → mando y control).
+-- AUTO-05 solo actúa con la crítica: llega tarde. AUTO-06 bloquea la cuenta en cuanto aparece la fase
+-- COMPROMISO precedida, en la ventana, de al menos una fase previa (phishing o fuerza bruta) sobre el
+-- mismo usuario. Fases: tabla fases_ataque (012).
+-- Mismos filtros de seguridad que AUTO-05 (duplicado, sospechoso, petición SOL, estado, remitente SOC
+-- autenticado, inconsistencias, cuenta del dominio, lista blanca, liberación humana, cuenta protegida).
+-- Aquí la prueba es la secuencia de fases, no la gravedad: se ignoran las discrepancias asunto/cuerpo.
+-- AUTO-06 vive en reglas_bloqueo_auto con peligrosidades vacías: evaluar_bloqueo_auto() nunca la elige;
+-- la evalúa solo evaluar_cadena_compromiso(). Idempotente; no reevalúa nada al aplicarse.
+-- ============================================================================
+
+ALTER TABLE reglas_bloqueo_auto ADD COLUMN IF NOT EXISTS fase_disparadora  VARCHAR(30) REFERENCES fases_ataque(fase);
+ALTER TABLE reglas_bloqueo_auto ADD COLUMN IF NOT EXISTS fases_previas     TEXT[];
+ALTER TABLE reglas_bloqueo_auto ADD COLUMN IF NOT EXISTS min_fases_previas INTEGER NOT NULL DEFAULT 1;
+
+INSERT INTO reglas_bloqueo_auto
+    (regla_id, descripcion, objetivo, prioridades, peligrosidades, clases_incibe,
+     requiere_remitente_confianza, excluir_inconsistentes, solo_ip_publica, min_alertas, ventana_minutos, orden,
+     antiguedad_max_minutos, inconsistencias_ignoradas, inconsistencias_solo_ip, ip_automatica, requiere_autenticacion,
+     fase_disparadora, fases_previas, min_fases_previas)
+VALUES
+    ('AUTO-06', 'Correlación: cuenta comprometida (acceso no reconocido) precedida de phishing o fuerza bruta sobre el mismo usuario en 2 h',
+     'USUARIO', '{P1,P2,P3,P4}', '{}', NULL,
+     TRUE, TRUE, TRUE, 1, 120, 6,
+     NULL, '{"Prioridad % incoherente con gravedad %","Gravedad del asunto % distinta de la criticidad del cuerpo %"}',
+     '{"Dirección relacionada con formato no válido%"}', FALSE, TRUE,
+     'COMPROMISO', '{ACCESO_INICIAL,CREDENCIALES}', 1)
+ON CONFLICT (regla_id) DO NOTHING;
+
+-- ----------------------------------------------------------------------------
+-- EVALUACIÓN. Se llama con cualquier alerta: si es de una fase previa, reevalúa el compromiso posterior
+-- del mismo usuario (los correos pueden llegar desordenados). Devuelve acciones creadas.
+-- ----------------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION evaluar_cadena_compromiso(p_alerta_id UUID) RETURNS INTEGER AS $$
+DECLARE
+    r          reglas_bloqueo_auto%ROWTYPE;
+    x          alertas%ROWTYPE;
+    a          alertas%ROWTYPE;
+    v_fase     VARCHAR;
+    v_usuario  TEXT;
+    v_fecha    TIMESTAMP WITH TIME ZONE;
+    v_dominio  TEXT;
+    v_aut      RECORD;
+    v_incons   TEXT[];
+    v_previas  TEXT[];
+    v_lib      RECORD;
+    v_activo   RECORD;
+    v_peticion BOOLEAN;
+    v_blanca   TEXT;
+    v_motivo   TEXT;
+    v_decision TEXT := 'DESCARTAR';
+    v_accion   UUID;
+BEGIN
+    SELECT * INTO r FROM reglas_bloqueo_auto WHERE regla_id = 'AUTO-06' AND activa;
+    IF NOT FOUND THEN
+        RETURN 0;
+    END IF;
+    SELECT * INTO x FROM alertas WHERE alerta_id = p_alerta_id;
+    IF NOT FOUND OR x.es_duplicada THEN
+        RETURN 0;
+    END IF;
+    v_fase := fase_de_titulo(x.titulo);
+    v_usuario := lower(btrim(x.usuario_implicado));
+    IF v_fase IS NULL OR v_usuario IS NULL OR v_usuario = '' THEN
+        RETURN 0;
+    END IF;
+
+    -- Alerta disparadora: esta misma, o el compromiso del mismo usuario dentro de la ventana posterior
+    IF v_fase = r.fase_disparadora THEN
+        a := x;
+    ELSIF v_fase = ANY (r.fases_previas) THEN
+        SELECT * INTO a FROM alertas c
+        WHERE NOT c.es_duplicada AND lower(btrim(c.usuario_implicado)) = v_usuario
+          AND fase_de_titulo(c.titulo) = r.fase_disparadora
+          AND coalesce(c.fecha_hora_evento, c.fecha_hora_correo)
+                BETWEEN coalesce(x.fecha_hora_evento, x.fecha_hora_correo)
+                    AND coalesce(x.fecha_hora_evento, x.fecha_hora_correo) + make_interval(mins => r.ventana_minutos)
+        ORDER BY coalesce(c.fecha_hora_evento, c.fecha_hora_correo)
+        LIMIT 1;
+        IF a.alerta_id IS NULL THEN
+            RETURN 0;
+        END IF;
+    ELSE
+        RETURN 0;
+    END IF;
+
+    -- Si esta alerta ya bloqueó al usuario, no se reevalúa
+    IF EXISTS (SELECT 1 FROM decisiones_bloqueo_auto
+               WHERE alerta_id = a.alerta_id AND tipo_objetivo = 'USUARIO'
+                 AND valor_objetivo = v_usuario AND decision = 'BLOQUEAR') THEN
+        RETURN 0;
+    END IF;
+
+    v_fecha := coalesce(a.fecha_hora_evento, a.fecha_hora_correo);
+    SELECT lower(dominio) INTO v_dominio FROM config_autenticacion WHERE id = 1;
+    SELECT * INTO v_aut FROM autenticidad_correo(a.correo_id);
+    v_blanca := motivo_lista_blanca('USUARIO', v_usuario);
+    v_peticion := a.id_solicitud IS NOT NULL
+               OR concat_ws(' ', a.asunto_correo, a.titulo) ~* '\mSOL-[0-9]+'
+               OR plegar(concat_ws(' ', a.asunto_correo, a.titulo)) ~ 'solicitud (de )?(bloqueo|liberacion|desbloqueo)';
+    SELECT coalesce(array_agg(i), '{}') INTO v_incons
+    FROM unnest(a.inconsistencias) i
+    WHERE NOT (i LIKE ANY (r.inconsistencias_ignoradas)) AND NOT (i LIKE ANY (r.inconsistencias_solo_ip));
+
+    -- Fases previas distintas del mismo usuario en la ventana (alertas fiables)
+    SELECT coalesce(array_agg(DISTINCT f), '{}') INTO v_previas
+    FROM (SELECT fase_de_titulo(p.titulo) AS f
+          FROM alertas p
+          WHERE NOT p.es_duplicada AND NOT p.es_sospechosa
+            AND p.estado NOT IN ('FALSA_ALARMA', 'NO_SOC')
+            AND lower(btrim(p.usuario_implicado)) = v_usuario
+            AND coalesce(p.fecha_hora_evento, p.fecha_hora_correo)
+                  BETWEEN v_fecha - make_interval(mins => r.ventana_minutos) AND v_fecha) s
+    WHERE f = ANY (r.fases_previas);
+
+    -- Última liberación humana del usuario
+    SELECT l.solicitado_por, l.fecha_solicitud INTO v_lib
+    FROM acciones_bloqueo l
+    WHERE l.accion = 'LIBERAR' AND NOT l.simulacion
+      AND (l.estado IN ('PENDIENTE', 'EJECUTADA') OR es_cuarentena(l.estado, l.respuesta_api))
+      AND lower(l.usuario_objetivo) = v_usuario
+    ORDER BY l.fecha_solicitud DESC
+    LIMIT 1;
+
+    -- Filtros en orden: el primero que no se cumple es el motivo
+    IF a.es_sospechosa THEN
+        v_motivo := 'Correo sospechoso o manipulado (' || coalesce(a.motivo_sospecha, 'sin detalle') || '): requiere revisión humana';
+    ELSIF v_peticion THEN
+        v_motivo := 'Petición recibida por correo: los correos nunca disparan bloqueos';
+    ELSIF a.estado IN ('FALSA_ALARMA', 'NO_SOC', 'CERRADA') THEN
+        v_motivo := 'Alerta en estado ' || a.estado::text;
+    ELSIF r.requiere_remitente_confianza AND a.remitente_confianza IS NOT TRUE THEN
+        v_motivo := 'Remitente no verificado como SOC (' || a.remitente_correo || ')';
+    ELSIF r.requiere_autenticacion AND v_aut.verificada IS NOT TRUE THEN
+        v_motivo := 'Autenticidad del remitente no verificada: ' || coalesce(v_aut.motivo, 'sin original EML');
+    ELSIF r.excluir_inconsistentes AND cardinality(v_incons) > 0 THEN
+        v_motivo := 'Alerta con inconsistencias: ' || array_to_string(v_incons, '; ');
+    ELSIF v_usuario !~ '^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$' THEN
+        v_motivo := 'Usuario no identificado de forma fiable (' || v_usuario || ')';
+    ELSIF split_part(v_usuario, '@', 2) IS DISTINCT FROM v_dominio THEN
+        v_motivo := 'Cuenta de otro dominio (' || v_usuario || ')';
+    ELSIF v_blanca IS NOT NULL THEN
+        v_motivo := 'En lista blanca: ' || v_blanca;
+    ELSIF v_lib.fecha_solicitud IS NOT NULL AND v_lib.fecha_solicitud >= v_fecha THEN
+        v_motivo := format('Liberado manualmente por %s el %s, después de esta alerta: prevalece la decisión humana',
+                           v_lib.solicitado_por, to_char(v_lib.fecha_solicitud AT TIME ZONE 'Europe/Madrid', 'DD/MM HH24:MI'));
+    ELSIF cardinality(v_previas) < r.min_fases_previas THEN
+        v_motivo := format('Acceso no reconocido sin phishing ni fuerza bruta previos en %s min: no hay cadena; lo valora una persona',
+                           r.ventana_minutos);
+    ELSE
+        PERFORM pg_advisory_xact_lock(hashtext('bloqueo:USUARIO:' || v_usuario));
+        SELECT * INTO v_activo FROM v_bloqueos_activos WHERE tipo = 'USUARIO' AND valor = v_usuario;
+        IF FOUND THEN
+            v_decision := 'YA_BLOQUEADO';
+            v_motivo := format('Ya %s desde %s (%s, acción %s): no se repite el bloqueo',
+                               CASE WHEN v_activo.confirmado THEN 'bloqueado' ELSE 'en curso' END,
+                               to_char(v_activo.fecha_solicitud AT TIME ZONE 'Europe/Madrid', 'DD/MM HH24:MI'),
+                               v_activo.estado, v_activo.accion_id);
+            v_accion := v_activo.accion_id;
+        ELSIF es_cuenta_protegida(v_usuario) THEN
+            v_decision := 'RECOMENDAR';
+            v_motivo := format('Cumple la regla %s, pero %s parece una cuenta de servicio o administración: decide una persona',
+                               r.regla_id, v_usuario);
+        ELSE
+            v_decision := 'BLOQUEAR';
+            v_motivo := format('Regla %s: %s. Alerta %s (%s) precedida de %s en %s min; remitente %s. Contención antes de mando y control y cifrado.',
+                               r.regla_id, r.descripcion, coalesce(a.referencia_soc, a.id_alerta_soc, a.alerta_id::text),
+                               split_part(a.titulo, ' · ', 1),
+                               (SELECT string_agg(f.nombre, ' + ' ORDER BY f.orden) FROM fases_ataque f WHERE f.fase = ANY (v_previas)),
+                               r.ventana_minutos, coalesce(v_aut.metodo, 'sin verificar'));
+            INSERT INTO acciones_bloqueo
+                (accion, usuario_objetivo, motivo, regla, alerta_id, solicitado_por, estado, origen)
+            VALUES ('BLOQUEAR', v_usuario, v_motivo, r.regla_id, a.alerta_id, 'AUTO:' || r.regla_id, 'PENDIENTE', 'AUTOMATICO')
+            RETURNING accion_id INTO v_accion;
+        END IF;
+    END IF;
+
+    INSERT INTO decisiones_bloqueo_auto
+        (alerta_id, regla_id, tipo_objetivo, valor_objetivo, decision, motivo, accion_id)
+    VALUES (a.alerta_id, r.regla_id, 'USUARIO', v_usuario, v_decision, v_motivo, v_accion)
+    ON CONFLICT (alerta_id, tipo_objetivo, valor_objetivo) DO UPDATE
+        SET regla_id = EXCLUDED.regla_id, decision = EXCLUDED.decision, motivo = EXCLUDED.motivo,
+            accion_id = EXCLUDED.accion_id, fecha = CURRENT_TIMESTAMP;
+
+    RETURN CASE WHEN v_decision = 'BLOQUEAR' THEN 1 ELSE 0 END;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Histórico: evalúa los compromisos de las últimas p_horas (por hora del evento)
+CREATE OR REPLACE FUNCTION evaluar_cadena_pendientes(p_horas INTEGER DEFAULT 24) RETURNS INTEGER AS $$
+DECLARE
+    v_id    UUID;
+    v_total INTEGER := 0;
+BEGIN
+    FOR v_id IN
+        SELECT a.alerta_id FROM alertas a
+        WHERE NOT a.es_duplicada
+          AND fase_de_titulo(a.titulo) = (SELECT fase_disparadora FROM reglas_bloqueo_auto WHERE regla_id = 'AUTO-06')
+          AND coalesce(a.fecha_hora_evento, a.fecha_hora_correo) >= now() - make_interval(hours => p_horas)
+        ORDER BY coalesce(a.fecha_hora_evento, a.fecha_hora_correo)
+    LOOP
+        v_total := v_total + evaluar_cadena_compromiso(v_id);
+    END LOOP;
+    RETURN v_total;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Trigger: evaluación inmediata al crear cualquier alerta (nunca rompe la ingesta)
+CREATE OR REPLACE FUNCTION trg_cadena_compromiso() RETURNS TRIGGER AS $$
+BEGIN
+    BEGIN
+        PERFORM evaluar_cadena_compromiso(NEW.alerta_id);
+    EXCEPTION WHEN others THEN
+        RAISE WARNING 'AUTO-06 no evaluada para la alerta %: %', NEW.alerta_id, SQLERRM;
+    END;
+    RETURN NULL;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trigger_cadena_compromiso ON alertas;
+CREATE TRIGGER trigger_cadena_compromiso
+    AFTER INSERT ON alertas
+    FOR EACH ROW
+    WHEN (NOT NEW.es_duplicada)
+    EXECUTE FUNCTION trg_cadena_compromiso();
+
+-- ============================================================================
+-- 014_corroboracion_por_id.sql — La corroboración cuenta alertas distintas, no filas (corrige la 010)
+--
+-- Fallo: un "Reenvío de alerta ya notificada" que llega en el mismo lote que su original se evalúa
+-- antes de que procesar_correo() lo marque como duplicado (el intercambio de original ocurre después
+-- del INSERT). La misma alerta contaba dos veces: slopez@ (AL-20261030-0219, cuerpo Baja) pasó a
+-- BLOQUEAR con "2 alertas críticas" cuando solo había una. Ahora se cuentan IDs del SOC distintos
+-- (id_alerta_soc, o la propia alerta si no lo tiene). Mismo cambio en el recuento de min_alertas.
+-- Corrige la decisión de slopez@ y anula su acción pendiente (OMITIDA, nunca se envió). Idempotente.
+-- ============================================================================
+
+CREATE OR REPLACE FUNCTION evaluar_bloqueo_auto(p_alerta_id UUID) RETURNS INTEGER AS $$
+DECLARE
+    a          alertas%ROWTYPE;
+    r          reglas_bloqueo_auto%ROWTYPE;
+    o          RECORD;
+    v_fecha    TIMESTAMP WITH TIME ZONE;
+    v_motivo   TEXT;
+    v_decision TEXT;
+    v_blanca   TEXT;
+    v_activo   RECORD;
+    v_lib      RECORD;
+    v_desde    TIMESTAMP WITH TIME ZONE;
+    v_peticion BOOLEAN;
+    v_incons   TEXT[];
+    v_inc_obj  TEXT[];
+    v_edad_min INTEGER;
+    v_aut      RECORD;
+    v_dominio  TEXT;
+    v_cuerpo   TEXT;      -- CONFIRMA | CORROBORADA | SIN_CORROBORAR | NO
+    v_corr     INTEGER;
+    v_num      INTEGER;
+    v_accion   UUID;
+    v_creadas  INTEGER := 0;
+BEGIN
+    SELECT * INTO a FROM alertas WHERE alerta_id = p_alerta_id;
+    IF NOT FOUND THEN
+        RETURN 0;
+    END IF;
+    v_fecha := coalesce(a.fecha_hora_evento, a.fecha_hora_correo);
+    -- Antigüedad desde que llegó el correo (cuando el SOC nos avisó)
+    v_edad_min := floor(extract(epoch FROM (now() - a.fecha_hora_correo)) / 60);
+    -- Petición de bloqueo/liberación por correo, aunque el extractor no haya rellenado id_solicitud
+    v_peticion := a.id_solicitud IS NOT NULL
+               OR concat_ws(' ', a.asunto_correo, a.titulo) ~* '\mSOL-[0-9]+'
+               OR plegar(concat_ws(' ', a.asunto_correo, a.titulo)) ~ 'solicitud (de )?(bloqueo|liberacion|desbloqueo)';
+    SELECT lower(dominio) INTO v_dominio FROM config_autenticacion WHERE id = 1;
+
+    -- Solo la primera regla activa que encaja (por orden) decide sobre la alerta
+    SELECT * INTO r FROM reglas_bloqueo_auto
+    WHERE activa
+      AND a.soc_prioridad    = ANY (prioridades)
+      AND a.soc_peligrosidad = ANY (peligrosidades)
+      AND (clases_incibe IS NULL OR a.incibe_clase_id = ANY (clases_incibe))
+    ORDER BY orden, regla_id
+    LIMIT 1;
+    IF NOT FOUND THEN
+        RETURN 0;   -- no es una situación "muy clara": ni se bloquea ni se registra decisión
+    END IF;
+
+    -- Autenticidad del remitente a partir del original EML (009/010)
+    SELECT * INTO v_aut FROM autenticidad_correo(a.correo_id);
+
+    -- Inconsistencias que cuentan para esta regla (sin las que la regla ignora expresamente)
+    SELECT coalesce(array_agg(i), '{}') INTO v_incons
+    FROM unnest(a.inconsistencias) i
+    WHERE NOT (i LIKE ANY (r.inconsistencias_ignoradas));
+
+    FOR o IN
+        SELECT * FROM (VALUES ('IP',      host(a.ip_afectada)),
+                              ('USUARIO', lower(btrim(a.usuario_implicado)))) t(tipo, valor)
+        WHERE t.valor IS NOT NULL AND t.valor <> '' AND (r.objetivo = 'AMBOS' OR r.objetivo = t.tipo)
+    LOOP
+        -- Si esta alerta ya bloqueó este objetivo, no se reevalúa
+        IF EXISTS (SELECT 1 FROM decisiones_bloqueo_auto
+                   WHERE alerta_id = a.alerta_id AND tipo_objetivo = o.tipo
+                     AND valor_objetivo = o.valor AND decision = 'BLOQUEAR') THEN
+            CONTINUE;
+        END IF;
+
+        v_motivo := NULL;
+        v_decision := 'DESCARTAR';
+        v_accion := NULL;
+        v_blanca := motivo_lista_blanca(o.tipo, o.valor);
+
+        -- Una IP mal escrita invalida el objetivo IP, no al usuario
+        v_inc_obj := CASE WHEN o.tipo = 'USUARIO'
+                          THEN ARRAY(SELECT i FROM unnest(v_incons) i WHERE NOT (i LIKE ANY (r.inconsistencias_solo_ip)))
+                          ELSE v_incons END;
+
+        -- ¿Confirma el cuerpo la gravedad del asunto?
+        v_corr := NULL;
+        IF r.criticidades_cuerpo IS NULL
+           OR coalesce(plegar(a.criticidad_cuerpo), '') LIKE ANY (SELECT x || '%' FROM unnest(r.criticidades_cuerpo) x) THEN
+            v_cuerpo := 'CONFIRMA';
+        ELSIF coalesce(plegar(a.criticidad_cuerpo), '') LIKE ANY (SELECT x || '%' FROM unnest(coalesce(r.criticidades_corroboradas, '{}')) x) THEN
+            -- Alertas críticas distintas (por ID del SOC) del mismo objetivo en la ventana, incluida esta
+            SELECT count(DISTINCT coalesce(x.id_alerta_soc, x.alerta_id::text)) INTO v_corr
+            FROM alertas x
+            WHERE NOT x.es_duplicada AND NOT x.es_sospechosa
+              AND x.soc_peligrosidad = ANY (r.peligrosidades)
+              AND x.estado NOT IN ('FALSA_ALARMA', 'NO_SOC')
+              AND coalesce(x.fecha_hora_evento, x.fecha_hora_correo)
+                    BETWEEN v_fecha - make_interval(mins => r.ventana_corroboracion_min) AND v_fecha
+              AND CASE o.tipo WHEN 'IP' THEN host(x.ip_afectada) = o.valor
+                              ELSE lower(btrim(x.usuario_implicado)) = o.valor END;
+            v_cuerpo := CASE WHEN v_corr >= r.min_alertas_corroboracion THEN 'CORROBORADA' ELSE 'SIN_CORROBORAR' END;
+        ELSE
+            v_cuerpo := 'NO';
+        END IF;
+
+        -- Última liberación manual de este objetivo: la decisión humana prevalece sobre evidencias anteriores
+        SELECT l.solicitado_por, l.fecha_solicitud INTO v_lib
+        FROM acciones_bloqueo l
+        WHERE l.accion = 'LIBERAR' AND NOT l.simulacion
+          AND (l.estado IN ('PENDIENTE', 'EJECUTADA') OR es_cuarentena(l.estado, l.respuesta_api))
+          AND CASE o.tipo WHEN 'IP' THEN host(l.ip_objetivo) = o.valor
+                          ELSE lower(l.usuario_objetivo) = o.valor END
+        ORDER BY l.fecha_solicitud DESC
+        LIMIT 1;
+        v_desde := v_fecha - make_interval(mins => r.ventana_minutos);
+        IF v_lib.fecha_solicitud IS NOT NULL AND v_lib.fecha_solicitud > v_desde THEN
+            v_desde := v_lib.fecha_solicitud;   -- solo cuentan alertas posteriores a la liberación
+        END IF;
+
+        -- Filtros en orden: el primero que no se cumple es el motivo del descarte
+        IF a.es_duplicada THEN
+            v_motivo := 'Alerta duplicada: la decisión corresponde a la alerta original';
+        ELSIF a.es_sospechosa THEN
+            v_motivo := 'Correo sospechoso o manipulado (' || coalesce(a.motivo_sospecha, 'sin detalle') || '): requiere revisión humana';
+        ELSIF v_peticion THEN
+            v_motivo := 'Petición recibida por correo (' || coalesce(a.id_solicitud, 'solicitud') || '): los correos nunca disparan bloqueos';
+        ELSIF a.estado IN ('FALSA_ALARMA', 'NO_SOC', 'CERRADA') THEN
+            v_motivo := 'Alerta en estado ' || a.estado::text;
+        ELSIF r.requiere_remitente_confianza AND a.remitente_confianza IS NOT TRUE THEN
+            v_motivo := 'Remitente no verificado como SOC (' || a.remitente_correo || ')';
+        ELSIF r.requiere_autenticacion AND v_aut.verificada IS NOT TRUE THEN
+            v_motivo := 'Autenticidad del remitente no verificada: ' || coalesce(v_aut.motivo, 'sin original EML');
+        ELSIF r.exigir_criticidad_cuerpo AND plegar(a.criticidad_cuerpo) NOT LIKE 'critic%' THEN
+            v_motivo := format('Sin doble confirmación: el asunto dice %s pero el cuerpo dice %s',
+                               a.soc_peligrosidad, coalesce(a.criticidad_cuerpo, 'nada'));
+        ELSIF v_cuerpo = 'NO' THEN
+            v_motivo := format('El cuerpo no confirma la gravedad: el asunto dice %s y el cuerpo dice %s',
+                               a.soc_peligrosidad, coalesce(a.criticidad_cuerpo, 'nada'));
+        ELSIF r.excluir_inconsistentes AND cardinality(v_inc_obj) > 0 THEN
+            v_motivo := 'Alerta con inconsistencias: ' || array_to_string(v_inc_obj, '; ');
+        ELSIF o.tipo = 'USUARIO' AND o.valor !~ '^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$' THEN
+            v_motivo := 'Usuario no identificado de forma fiable (' || o.valor || '): se necesita una cuenta de correo completa';
+        ELSIF o.tipo = 'USUARIO' AND split_part(o.valor, '@', 2) IS DISTINCT FROM v_dominio THEN
+            v_motivo := 'Cuenta de otro dominio (' || o.valor || '): no es una cuenta de la empresa';
+        ELSIF o.tipo = 'IP' AND r.solo_ip_publica AND es_ip_no_publica(o.valor::inet) THEN
+            v_motivo := 'IP interna o reservada (' || o.valor || '): puede ser el servidor afectado; requiere revisión humana';
+        ELSIF v_blanca IS NOT NULL THEN
+            v_motivo := 'En lista blanca: ' || v_blanca;
+        ELSIF v_lib.fecha_solicitud IS NOT NULL AND v_lib.fecha_solicitud >= v_fecha THEN
+            v_motivo := format('Liberado manualmente por %s el %s, después de esta alerta: prevalece la decisión humana',
+                               v_lib.solicitado_por,
+                               to_char(v_lib.fecha_solicitud AT TIME ZONE 'Europe/Madrid', 'DD/MM HH24:MI'));
+        ELSE
+            -- Corroboración: alertas únicas sobre el mismo objetivo dentro de la ventana
+            SELECT count(DISTINCT coalesce(x.id_alerta_soc, x.alerta_id::text)) INTO v_num
+            FROM alertas x
+            WHERE NOT x.es_duplicada AND NOT x.es_sospechosa
+              AND x.soc_peligrosidad = ANY (r.peligrosidades)
+              AND x.estado NOT IN ('FALSA_ALARMA', 'NO_SOC')
+              AND coalesce(x.fecha_hora_evento, x.fecha_hora_correo) BETWEEN v_desde AND v_fecha
+              AND CASE o.tipo WHEN 'IP' THEN host(x.ip_afectada) = o.valor
+                              ELSE lower(btrim(x.usuario_implicado)) = o.valor END;
+
+            IF v_num < r.min_alertas THEN
+                v_motivo := format('Solo %s alerta(s) en %s min; la regla %s exige %s',
+                                   v_num, r.ventana_minutos, r.regla_id, r.min_alertas);
+            ELSE
+                -- Serializa decisiones concurrentes sobre el mismo objetivo (misma clave que el ejecutor)
+                PERFORM pg_advisory_xact_lock(hashtext('bloqueo:' || o.tipo || ':' || o.valor));
+
+                SELECT * INTO v_activo FROM v_bloqueos_activos WHERE tipo = o.tipo AND valor = o.valor;
+                IF FOUND THEN
+                    v_decision := 'YA_BLOQUEADO';
+                    v_motivo := format('Ya %s desde %s (%s, acción %s): no se repite el bloqueo',
+                                       CASE WHEN v_activo.confirmado THEN 'bloqueado' ELSE 'en curso' END,
+                                       to_char(v_activo.fecha_solicitud AT TIME ZONE 'Europe/Madrid', 'DD/MM HH24:MI'),
+                                       v_activo.estado, v_activo.accion_id);
+                    v_accion := v_activo.accion_id;
+                ELSIF o.tipo = 'IP' AND NOT r.ip_automatica THEN
+                    v_decision := 'RECOMENDAR';
+                    v_motivo := format('Cumple la regla %s, pero las IPs no se bloquean solas (podría ser un servidor público): se recomienda bloquear, decide una persona',
+                                       r.regla_id);
+                ELSIF v_cuerpo = 'SIN_CORROBORAR' THEN
+                    v_decision := 'RECOMENDAR';
+                    v_motivo := format('Asunto %s pero cuerpo %s, y solo %s alerta(s) crítica(s) de %s en %s min (la regla %s exige %s): se recomienda bloquear, decide una persona',
+                                       a.soc_peligrosidad, a.criticidad_cuerpo, v_corr, o.valor,
+                                       r.ventana_corroboracion_min, r.regla_id, r.min_alertas_corroboracion);
+                ELSIF o.tipo = 'USUARIO' AND es_cuenta_protegida(o.valor) THEN
+                    v_decision := 'RECOMENDAR';
+                    v_motivo := format('Cumple la regla %s, pero %s parece una cuenta de servicio o administración: se recomienda bloquear, decide una persona',
+                                       r.regla_id, o.valor);
+                ELSIF r.antiguedad_max_minutos IS NOT NULL AND v_edad_min > r.antiguedad_max_minutos THEN
+                    v_decision := 'RECOMENDAR';
+                    v_motivo := format('Cumple la regla %s, pero la alerta llegó hace %s min (máximo %s): se recomienda bloquear, decide una persona',
+                                       r.regla_id, v_edad_min, r.antiguedad_max_minutos);
+                ELSE
+                    v_decision := 'BLOQUEAR';
+                    v_motivo := format('Regla %s: %s. Alerta %s [%s][%s], cuerpo %s%s, clase %s; remitente %s; %s alerta(s) en %s min.%s',
+                                       r.regla_id, r.descripcion, coalesce(a.referencia_soc, a.id_alerta_soc, a.alerta_id::text),
+                                       a.soc_prioridad, a.soc_peligrosidad, coalesce(a.criticidad_cuerpo, '—'),
+                                       CASE WHEN v_cuerpo = 'CORROBORADA'
+                                            THEN format(' (corroborado por %s alertas críticas en %s min)', v_corr, r.ventana_corroboracion_min)
+                                            ELSE '' END,
+                                       coalesce(a.incibe_clase_id, '—'), coalesce(v_aut.metodo, 'sin verificar'),
+                                       v_num, r.ventana_minutos,
+                                       CASE WHEN cardinality(v_incons) > cardinality(v_inc_obj)
+                                            THEN ' Nota: ' || array_to_string(ARRAY(SELECT unnest(v_incons) EXCEPT SELECT unnest(v_inc_obj)), '; ') || ' (solo afecta a la IP).'
+                                            ELSE '' END);
+                    INSERT INTO acciones_bloqueo
+                        (accion, usuario_objetivo, ip_objetivo, motivo, regla, alerta_id,
+                         solicitado_por, estado, origen)
+                    VALUES ('BLOQUEAR',
+                            CASE WHEN o.tipo = 'USUARIO' THEN o.valor END,
+                            CASE WHEN o.tipo = 'IP' THEN o.valor::inet END,
+                            v_motivo, r.regla_id, a.alerta_id,
+                            'AUTO:' || r.regla_id, 'PENDIENTE', 'AUTOMATICO')
+                    RETURNING accion_id INTO v_accion;
+                    v_creadas := v_creadas + 1;
+                END IF;
+            END IF;
+        END IF;
+
+        INSERT INTO decisiones_bloqueo_auto
+            (alerta_id, regla_id, tipo_objetivo, valor_objetivo, decision, motivo, accion_id)
+        VALUES (a.alerta_id, r.regla_id, o.tipo, o.valor, v_decision, v_motivo, v_accion)
+        ON CONFLICT (alerta_id, tipo_objetivo, valor_objetivo) DO UPDATE
+            SET regla_id = EXCLUDED.regla_id, decision = EXCLUDED.decision, motivo = EXCLUDED.motivo,
+                accion_id = EXCLUDED.accion_id, fecha = CURRENT_TIMESTAMP;
+    END LOOP;
+
+    RETURN v_creadas;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Corrección de la decisión errónea (solo si sigue sin enviarse)
+UPDATE acciones_bloqueo
+SET estado = 'OMITIDA', exito = FALSE, fecha_respuesta = now(),
+    respuesta_api = jsonb_build_object('automation', jsonb_build_object(
+        'phase', 'review_required', 'code', 'CORROBORACION_DUPLICADA',
+        'detalle', 'Anulada por la migración 014 (aplicada antes como 013): el reenvío de la misma alerta contó como corroboración'))
+WHERE estado = 'PENDIENTE' AND origen = 'AUTOMATICO' AND regla = 'AUTO-05'
+  AND lower(usuario_objetivo) = 'slopez@sampol.com';
+
+DELETE FROM decisiones_bloqueo_auto d
+USING alertas a
+WHERE d.alerta_id = a.alerta_id AND d.tipo_objetivo = 'USUARIO' AND d.valor_objetivo = 'slopez@sampol.com'
+  AND d.decision = 'BLOQUEAR' AND a.id_alerta_soc = 'AL-20261030-0219'
+  AND NOT EXISTS (SELECT 1 FROM acciones_bloqueo b WHERE b.accion_id = d.accion_id AND b.estado IN ('PENDIENTE', 'EN_CURSO', 'EJECUTADA'));
+
+SELECT evaluar_bloqueo_auto(a.alerta_id)
+FROM alertas a
+WHERE a.id_alerta_soc = 'AL-20261030-0219' AND NOT a.es_duplicada;
+
+-- ============================================================================
+-- 015_outlook_aviso_ia_externo.sql — Avisos externos que solo mencionan una herramienta de IA → «06 No SOC»
+--
+-- Despliegue de BD-011: el aviso de inicio de sesión de noreply@tm.openai.com caía en «05 Cuarentena» por
+-- "Menciona herramientas de IA o prompts" (nombra ChatGPT), cuando lo esperado es «06 No SOC».
+-- Se relaja SOLO ese motivo, y solo si el remitente es externo, el correo tiene cabeceras de transporte, no
+-- es una alerta del SOC y no intenta imponer una clasificación. "Pide ignorar instrucciones" y "Texto
+-- dirigido a una IA" siguen yendo a cuarentena siempre. Misma vista que la 011 (mismas columnas). Idempotente.
+-- ============================================================================
+
+CREATE OR REPLACE VIEW v_outlook_destino AS
+WITH cfg AS (SELECT * FROM config_outlook WHERE id = 1),
+base AS (
+    SELECT b.correo_id, b.fecha_hora_correo, lower(btrim(b.remitente_correo)) AS remitente,
+           b.asunto_correo,
+           -- Identificador para encontrar el correo en Outlook (InternetMessageId completo si lo guardó la ingesta)
+           coalesce(nullif(b.cabeceras ->> 'original_message_id', ''), b.id_mensaje_correo) AS id_outlook,
+           a.alerta_id, a.referencia_soc, a.id_alerta_soc, a.soc_peligrosidad, a.criticidad_cuerpo,
+           a.incibe_clase_id, a.estado::text AS estado_alerta, a.es_duplicada, a.id_solicitud,
+           coalesce(cardinality(a.inconsistencias), 0) AS num_inconsistencias,
+           m.descarte_id,
+           -- procesar_correo() marca como sospechoso a todo remitente fuera de remitentes_confianza; para ordenar
+           -- el buzón solo cuentan los motivos reales (instrucciones a una IA, clasificación impuesta...)
+           nullif(btrim(regexp_replace(coalesce(a.motivo_sospecha, m.motivo_sospecha, ''),
+                                       'Remitente fuera de la lista de confianza \([^)]*\)', '', 'g'), '; '), '') AS sospecha_real,
+           coalesce(au.verificada, FALSE) AS verificada, au.motivo AS motivo_autenticidad,
+           -- Un EML sin ninguna cabecera Received no ha pasado por un servidor de correo: inyectado o manipulado
+           (b.eml_raw IS NOT NULL AND NOT EXISTS (
+               SELECT 1 FROM cabeceras_eml(b.correo_id) h WHERE h.nombre = 'received')) AS sin_transporte,
+           lower(btrim(b.remitente_correo)) = ANY (SELECT lower(x) FROM cfg, unnest(cfg.remitentes_directrices) x) AS es_director,
+           lower(btrim(b.remitente_correo)) = ANY (SELECT lower(x) FROM cfg, unnest(cfg.remitentes_soc) x) AS es_soc,
+           -- motivo_sospecha_ia() solo devuelve el primer motivo y mira "menciona IA" antes que "impone clasificación":
+           -- se vuelve a comprobar aquí para no relajar un correo que haga las dos cosas (015)
+           lower(coalesce(b.asunto_correo, '') || ' ' || texto_plano(b.cuerpo_correo_raw))
+               ~ '(clasifica|marca|categoriza|classify|mark).{0,40}(como|as) (falso positivo|false positive|no_soc|informativ|benign|leg[ií]tim)'
+               AS impone_clasificacion
+    FROM bandeja_entrada b
+    LEFT JOIN alertas a ON a.correo_id = b.correo_id
+    LEFT JOIN correos_malformados m ON m.correo_id = b.correo_id AND a.alerta_id IS NULL
+    LEFT JOIN LATERAL autenticidad_correo(b.correo_id) au ON TRUE
+),
+clasif AS (
+    SELECT base.*,
+           -- Un aviso externo que solo nombra una herramienta de IA (p. ej. el inicio de sesión de OpenAI) no es
+           -- sospechoso: pasó por servidores de correo, no imita una alerta del SOC y no da órdenes (015)
+           sospecha_real IS NOT NULL
+               AND NOT (sospecha_real = 'Menciona herramientas de IA o prompts'
+                        AND motivo_autenticidad LIKE 'Remitente externo%'
+                        AND NOT sin_transporte
+                        AND alerta_id IS NULL
+                        AND NOT impone_clasificacion) AS marcado_sospechoso,
+           alerta_id IS NOT NULL AND NOT es_soc AND NOT es_director AS formato_soc_suplantado,
+           CASE WHEN verificada THEN 'VERIFICADO'
+                WHEN motivo_autenticidad LIKE 'Remitente externo%' THEN 'EXTERNO'
+                WHEN motivo_autenticidad LIKE 'Sin %' OR motivo_autenticidad LIKE 'Falta %'
+                     OR motivo_autenticidad LIKE 'Correo interno sin%' THEN 'SIN_DATOS'
+                ELSE 'FALLIDA' END AS autenticidad,
+           alerta_id IS NOT NULL AND (
+               id_solicitud IS NOT NULL
+               OR asunto_correo ~* '\mSOL-[0-9]+'
+               OR plegar(asunto_correo) ~ 'solicitud (de )?(bloqueo|liberacion|desbloqueo)') AS es_solicitud,
+           plegar(soc_peligrosidad::text) IN ('critico', 'alto')
+               OR plegar(criticidad_cuerpo) ~ '^(critic|alt)' AS es_grave,
+           EXISTS (SELECT 1 FROM v_bloqueos_activos ba WHERE ba.alerta_id = base.alerta_id AND ba.confirmado) AS bloqueo_confirmado,
+           EXISTS (SELECT 1 FROM v_bloqueos_activos ba WHERE ba.alerta_id = base.alerta_id AND NOT ba.confirmado) AS bloqueo_en_curso,
+           EXISTS (SELECT 1 FROM decisiones_bloqueo_auto d WHERE d.alerta_id = base.alerta_id AND d.decision = 'RECOMENDAR') AS recomendado
+    FROM base
+),
+destino AS (
+    SELECT clasif.*,
+           CASE
+               WHEN alerta_id IS NULL AND descarte_id IS NULL THEN NULL           -- aún sin procesar: se queda en la Bandeja
+               WHEN marcado_sospechoso OR autenticidad = 'FALLIDA' OR sin_transporte THEN 'CUARENTENA'
+               WHEN es_director THEN 'DIRECTRICES'
+               WHEN formato_soc_suplantado THEN 'CUARENTENA'
+               WHEN autenticidad = 'EXTERNO' THEN 'NO_SOC'
+               WHEN descarte_id IS NOT NULL AND es_soc THEN 'SOC_REVISION'
+               WHEN descarte_id IS NOT NULL THEN 'NO_SOC'
+               WHEN es_solicitud THEN 'SOLICITUDES'
+               WHEN es_duplicada OR estado_alerta = 'FALSA_ALARMA' OR soc_peligrosidad::text = 'INFORMATIVO' THEN 'RUIDO'
+               WHEN estado_alerta = 'NO_SOC' THEN 'NO_SOC'
+               WHEN estado_alerta = 'CERRADA' THEN 'SOC_CERRADAS'
+               WHEN es_grave THEN 'SOC_CRITICAS'
+               ELSE 'SOC_MEDIAS'
+           END AS carpeta_codigo,
+           array_remove(ARRAY[
+               CASE WHEN soc_peligrosidad IS NOT NULL THEN 'GRAVEDAD:' || soc_peligrosidad::text END,
+               CASE WHEN incibe_clase_id IS NOT NULL THEN 'INCIBE:' || incibe_clase_id END,
+               CASE WHEN es_director THEN 'SENAL:DIRECTRIZ' END,
+               CASE WHEN marcado_sospechoso OR autenticidad = 'FALLIDA' OR sin_transporte OR formato_soc_suplantado THEN 'SENAL:SOSPECHOSO'
+                    WHEN autenticidad = 'VERIFICADO' THEN 'SENAL:VERIFICADO'
+                    WHEN autenticidad = 'EXTERNO' THEN 'SENAL:EXTERNO'
+                    ELSE 'SENAL:NO_VERIFICADO' END,
+               CASE WHEN num_inconsistencias > 0 THEN 'SENAL:INCONSISTENTE' END,
+               CASE WHEN es_duplicada THEN 'SENAL:DUPLICADO' END,
+               CASE WHEN es_solicitud THEN 'SENAL:SOLICITUD' END,
+               CASE WHEN estado_alerta = 'FALSA_ALARMA' THEN 'SENAL:FALSA_ALARMA' END,
+               CASE WHEN (descarte_id IS NOT NULL AND es_soc) OR estado_alerta = 'EN_REVISION' THEN 'SENAL:REVISION' END,
+               CASE WHEN bloqueo_confirmado THEN 'SENAL:BLOQUEO'
+                    WHEN bloqueo_en_curso THEN 'SENAL:BLOQUEO_PENDIENTE'
+                    WHEN recomendado THEN 'SENAL:RECOMENDACION' END,
+               CASE WHEN (descarte_id IS NOT NULL AND NOT es_soc AND NOT es_director) OR estado_alerta = 'NO_SOC'
+                         OR autenticidad = 'EXTERNO' THEN 'SENAL:NO_SOC' END
+           ], NULL) AS claves
+    FROM clasif
+)
+SELECT d.correo_id, d.fecha_hora_correo, d.remitente, d.id_outlook, d.alerta_id,
+       coalesce(d.referencia_soc, d.id_alerta_soc) AS referencia,
+       d.carpeta_codigo, c.ruta AS carpeta_ruta,
+       coalesce((SELECT array_agg(oc.nombre ORDER BY oc.orden)
+                 FROM outlook_categorias oc
+                 WHERE oc.grupo || ':' || oc.clave = ANY (d.claves)), '{}') AS categorias,
+       CASE d.carpeta_codigo
+           WHEN 'CUARENTENA'   THEN 'Sospechoso: ' || coalesce(d.sospecha_real,
+                                                               CASE WHEN d.sin_transporte THEN 'sin cabeceras de transporte (posible inyección)' END,
+                                                               CASE WHEN d.autenticidad = 'FALLIDA' THEN d.motivo_autenticidad END,
+                                                               CASE WHEN d.formato_soc_suplantado THEN 'formato de alerta SOC enviado por ' || d.remitente || ', que no es el SOC' END,
+                                                               'marcado por las reglas de detección')
+           WHEN 'DIRECTRICES'  THEN 'Remitente de directrices (' || d.autenticidad || ')'
+           WHEN 'NO_SOC'       THEN 'No es una alerta del SOC (' || d.autenticidad || ')'
+           WHEN 'SOC_REVISION' THEN 'Correo del SOC sin formato reconocible: revisión manual'
+           WHEN 'SOLICITUDES'  THEN 'Petición de bloqueo o liberación: no se ejecuta desde el correo'
+           WHEN 'RUIDO'        THEN CASE WHEN d.es_duplicada THEN 'Duplicado de otra alerta'
+                                         WHEN d.estado_alerta = 'FALSA_ALARMA' THEN 'Falsa alarma'
+                                         ELSE 'Alerta informativa' END
+           WHEN 'SOC_CERRADAS' THEN 'Alerta cerrada'
+           WHEN 'SOC_CRITICAS' THEN 'Alerta crítica o alta pendiente'
+           WHEN 'SOC_MEDIAS'   THEN 'Alerta media o baja'
+       END AS motivo,
+       md5(coalesce(d.carpeta_codigo, '') || '|' || array_to_string(ARRAY(SELECT x FROM unnest(d.claves) x ORDER BY x), ',')) AS huella
+FROM destino d
+LEFT JOIN outlook_carpetas c ON c.codigo = d.carpeta_codigo;
+
+-- ============================================================================
+-- 016_outlook_power_automate.sql — Plan B de BD-011: Power Automate ordena el buzón (sin Client ID de Graph)
+--
+-- El inicio de sesión del script soc/outlook_organizar.py (device code) no se pudo completar. Power Automate
+-- ya tiene una conexión de Outlook con el propio buzón: un flujo programado lee la cola, mueve cada correo
+-- a su carpeta y devuelve el resultado. La BD sigue decidiendo (v_outlook_destino, 011/015).
+-- Para no depender de cómo convierte el conector arrays, UUID o upserts:
+--   * v_outlook_pendientes_pa: la cola de v_outlook_pendientes con todo en texto y las etiquetas en JSON.
+--   * outlook_resultados_pa: Power Automate solo INSERTA aquí (columnas de texto); el trigger registra el
+--     resultado con registrar_sincronizacion_outlook() (011), igual que el script.
+-- Guía del flujo: docs/POWER-AUTOMATE-OUTLOOK.md. Idempotente.
+-- ============================================================================
+
+CREATE OR REPLACE VIEW v_outlook_pendientes_pa AS
+SELECT p.correo_id::text            AS correo_id,
+       p.id_outlook,
+       p.carpeta_codigo,
+       p.carpeta_ruta,
+       to_json(p.categorias)::text  AS categorias_json,
+       p.huella,
+       p.fecha_hora_correo
+FROM v_outlook_pendientes p
+-- Mismo interruptor general que el script: con organizacion_activa = FALSE la cola sale vacía
+WHERE coalesce((SELECT c.organizacion_activa FROM config_outlook c WHERE c.id = 1), TRUE);
+
+CREATE TABLE IF NOT EXISTS outlook_resultados_pa (
+    resultado_id     BIGSERIAL PRIMARY KEY,
+    correo_id        TEXT NOT NULL,
+    huella           VARCHAR(32) NOT NULL,
+    carpeta_codigo   VARCHAR(30),
+    graph_message_id TEXT,
+    estado           VARCHAR(15) NOT NULL CHECK (estado IN ('APLICADO', 'NO_ENCONTRADO', 'ERROR')),
+    detalle          TEXT,
+    fecha            TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE OR REPLACE FUNCTION trg_outlook_resultado_pa() RETURNS TRIGGER AS $$
+DECLARE
+    v_id UUID;
+BEGIN
+    v_id := NEW.correo_id::uuid;   -- un correo_id mal formado hace fallar la inserción: el flujo lo verá
+    PERFORM registrar_sincronizacion_outlook(
+        v_id, NEW.huella, NEW.carpeta_codigo,
+        (SELECT d.categorias::text[] FROM v_outlook_destino d WHERE d.correo_id = v_id),
+        NEW.graph_message_id, NEW.estado, coalesce(NEW.detalle, 'Power Automate'));
+    RETURN NULL;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trigger_outlook_resultado_pa ON outlook_resultados_pa;
+CREATE TRIGGER trigger_outlook_resultado_pa
+    AFTER INSERT ON outlook_resultados_pa
+    FOR EACH ROW
+    EXECUTE FUNCTION trg_outlook_resultado_pa();
+
