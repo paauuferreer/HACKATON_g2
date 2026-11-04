@@ -1,0 +1,255 @@
+<title>Informe Hackapol SOC</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo+Narrow:wght@500;600;700&family=Public+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: informe de incidente en una columna; cifras clave arriba, costes, forense, respuesta y lecciones. */
+:root{
+  --bg:#f6f7f9; --panel:#ffffff; --ink:#151a22; --ink-2:#4a5463; --ink-3:#7a8494; --line:#dde2ea; --grid:#e9edf2;
+  --entrada:#2F68C2; --compromiso:#B57A06; --impacto:#B0306E;
+  --warn-bg:#fff4e0; --warn-ink:#7a4b00; --warn-line:#f0c879; --ok:#1d6b3a;
+  --f-display:"Archivo Narrow","Arial Narrow",Arial,sans-serif;
+  --f-body:"Public Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#12151b; --panel:#1a1f27; --ink:#e8ecf2; --ink-2:#aab3c0; --ink-3:#7f8896; --line:#2c333e; --grid:#232a34;
+  --entrada:#5E92EA; --compromiso:#C08A1C; --impacto:#DD5C9C;
+  --warn-bg:#2e2412; --warn-ink:#f2c36b; --warn-line:#6b5220; --ok:#7fd29d; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#12151b; --panel:#1a1f27; --ink:#e8ecf2; --ink-2:#aab3c0; --ink-3:#7f8896; --line:#2c333e; --grid:#232a34;
+  --entrada:#5E92EA; --compromiso:#C08A1C; --impacto:#DD5C9C;
+  --warn-bg:#2e2412; --warn-ink:#f2c36b; --warn-line:#6b5220; --ok:#7fd29d; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.55;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 56px}
+.wrap{max-width:1080px;margin:0 auto;display:grid;gap:32px}
+.eyebrow{font-family:var(--f-mono);font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3)}
+h1{font-family:var(--f-display);font-weight:700;font-size:clamp(40px,7vw,64px);line-height:1;margin:6px 0 10px;text-wrap:balance}
+h2{font-family:var(--f-display);font-weight:600;font-size:28px;line-height:1.15;margin:0;text-wrap:balance}
+h3{font-family:var(--f-display);font-weight:600;font-size:19px;margin:0}
+p{margin:0;max-width:72ch}
+.lead{font-size:17px;color:var(--ink-2)}
+.muted{color:var(--ink-2)}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.tag{font-family:var(--f-mono);font-size:11px;padding:0 5px;border-radius:3px;border:1px solid var(--line);color:var(--ink-2);white-space:nowrap}
+.banner{display:flex;gap:12px;align-items:flex-start;border:1px solid var(--warn-line);background:var(--warn-bg);color:var(--warn-ink);border-radius:6px;padding:12px 14px;font-size:14px}
+.banner .ico{font-family:var(--f-mono);font-weight:500;border:1.5px solid currentColor;border-radius:4px;padding:0 6px;line-height:20px;flex:none}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.stat{background:var(--panel);padding:16px 18px;display:grid;gap:2px;align-content:start}
+.stat .n{font-family:var(--f-display);font-weight:700;font-size:34px;line-height:1.05;font-variant-numeric:tabular-nums}
+.stat .l{font-size:13px;color:var(--ink-2)}
+@media (max-width:760px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+section{display:grid;gap:14px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:20px;display:grid;gap:14px;min-width:0}
+.cols{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+@media (max-width:800px){.cols{grid-template-columns:1fr}}
+.scroll{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-weight:600;color:var(--ink-2);font-size:12px}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;font-family:var(--f-mono);white-space:nowrap}
+tr.total td{font-weight:600;border-top:2px solid var(--line)}
+.bars{display:grid;gap:12px}
+.bar-row{display:grid;grid-template-columns:70px 1fr 120px;gap:12px;align-items:center}
+.bar{display:flex;gap:2px;height:22px}
+.bar span{display:block;height:100%;border-radius:2px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13px;color:var(--ink-2)}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:2px;margin-right:6px;vertical-align:-1px}
+.phases{display:flex;gap:2px}
+.phases b{width:12px;height:12px;border-radius:2px;background:var(--grid);display:block}
+.chip{font-family:var(--f-mono);font-size:11px;padding:1px 6px;border-radius:10px;border:1px solid var(--warn-line);background:var(--warn-bg);color:var(--warn-ink);white-space:nowrap}
+ul.clean{margin:0;padding-left:18px;display:grid;gap:6px}
+.lesson{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;border-top:1px solid var(--line);padding-top:10px}
+.lesson:first-of-type{border-top:0;padding-top:0}
+@media (max-width:700px){.lesson{grid-template-columns:1fr;gap:4px}}
+.foot{font-size:12px;color:var(--ink-3)}
+a{color:var(--entrada)}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Equipo 2 · Reto SOC Sampol · datos a <span id="gen"></span> (hora de Madrid)</div>
+    <h1>Informe Hackapol SOC</h1>
+    <p class="lead" id="lead"></p>
+  </header>
+
+  <div class="banner" role="status"><span class="ico">401</span><p id="banner"></p></div>
+
+  <section class="stats" aria-label="Cifras clave">
+    <div class="stat"><span class="n" id="k1"></span><span class="l">correos del SOC procesados, clasificados con la taxonomía INCIBE</span></div>
+    <div class="stat"><span class="n" id="k2"></span><span class="l" id="k2l"></span></div>
+    <div class="stat"><span class="n" id="k3"></span><span class="l">coste estimado del incidente (escenario medio)</span></div>
+    <div class="stat"><span class="n" id="k4"></span><span class="l">coste evitable con la detección temprana AUTO-06 (escenario medio)</span></div>
+  </section>
+
+  <section>
+    <h2>Lo que puede costar a la empresa</h2>
+    <p class="muted">Origen de cada cifra: <span class="tag">D</span> dato del director (Excel) · <span class="tag">BD</span> nuestra base de datos · <span class="tag">H</span> hipótesis del equipo. La parada del servicio, a <span id="parada"></span> por hora <span class="tag">D</span>, pesa más que todo lo demás junto.</p>
+    <div class="panel">
+      <div class="legend"><span><i style="background:var(--impacto)"></i>Parada del servicio</span><span><i style="background:var(--entrada)"></i>Respuesta y restauración</span><span><i style="background:var(--compromiso)"></i>Forense, jurídico y comunicación</span></div>
+      <div class="bars" id="bars"></div>
+      <div class="scroll"><table id="tcoste"></table></div>
+      <p class="muted" style="font-size:13px">Fuera del cálculo, como exposición sin cuantificar: el pago desviado por el documento manipulado (importe desconocido), el rescate (no se recomienda pagar), sanciones del RGPD (hasta 20 M€ o el 4 % de la facturación) y de NIS2 (hasta 10 M€ o el 2 %), y el daño a la reputación.</p>
+    </div>
+    <div class="cols">
+      <div class="panel">
+        <h3>El SOC manual hoy</h3>
+        <p><span class="mono" id="soc1"></span> al mes en revisar alertas y bloquear a mano <span class="tag">D</span>.</p>
+        <p id="soc2"></p>
+        <p id="soc3"></p>
+      </div>
+      <div class="panel">
+        <h3>Retorno de la solución</h3>
+        <div class="scroll"><table id="troi"></table></div>
+        <p class="muted" style="font-size:13px">La solución propia se paga en semanas y a 3 años supera a un SIEM/SOAR comercial (60.000 €/año + 20.000 € de implantación <span class="tag">D</span>). Las horas liberadas se dedican a investigar.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Análisis forense: las cuentas comprometidas</h2>
+    <p class="muted" id="forense-lead"></p>
+    <div class="panel">
+      <div class="legend"><span><i style="background:var(--entrada)"></i>Entrada (reconocimiento, phishing, fuerza bruta)</span><span><i style="background:var(--compromiso)"></i>Cuenta comprometida, lectura indebida</span><span><i style="background:var(--impacto)"></i>Mando y control, ejecución, impacto</span></div>
+      <div class="scroll"><table id="tvict"></table></div>
+      <p class="muted" style="font-size:13px">IPs reconstruidas desde el formato sin puntos del correo (p. ej. 2030113150 → 203.0.113.150). La línea temporal por carriles está en la página <a href="https://claude.ai/artifact/GmBeD6yWTeRWvt9sNW81m9" target="_blank" rel="noopener">Cadena Moreno</a>.</p>
+    </div>
+    <div class="cols">
+      <div class="panel">
+        <h3>Lo que cuenta el director</h3>
+        <ul class="clean">
+          <li><b>LAB-FS-01</b>: archivos <span class="mono">.locked</span> y nota de rescate (1:05).</li>
+          <li><b>LAB-WS-17</b>: sesión activa contra LAB-FS-01; reloj desfasado 11 min.</li>
+          <li><b>LAB-APP-04</b>: 18 GB hacia <span class="mono">198.51.100.77</span>, <span class="mono">auditoria_2026.7z</span>, tarea «System Health Check» y herramienta remota sin validar.</li>
+          <li><b>LAB-BKP-02</b>: retención de copias reducida; la identidad investigada tenía permisos.</li>
+          <li>Doble extorsión (descifrado y no publicación). La muestra lleva «Escenario ficticio» y un dominio <span class="mono">.invalid</span>.</li>
+          <li>Documento de pagos con la cuenta de destino cambiada; antecedente en AL-20261030-0121 (jfernandez@).</li>
+          <li>Hipótesis de entrada abiertas: soporte remoto no validado, credenciales expuestas o archivo por correo.</li>
+        </ul>
+      </div>
+      <div class="panel">
+        <h3>Otros casos para revisar</h3>
+        <div class="scroll"><table id="totros"></table></div>
+        <p class="muted" style="font-size:13px" id="aislados"></p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Qué hicimos</h2>
+    <div class="panel">
+      <ul class="clean">
+        <li><b>Base de datos en Azure (16 migraciones):</b> bandeja inmutable con huella SHA-256, clasificación INCIBE con 39 reglas explicables, duplicados, inconsistencias y correos manipulados.</li>
+        <li><b>Autenticidad del remitente</b> por cabeceras de Exchange (SPF, AuthAs Internal, SHA-256). Las directrices solo valen si vienen de dirti@.</li>
+        <li><b>Bloqueo automático:</b> AUTO-05 (crítico verificado) y AUTO-06 (correlación de fases), con lista blanca, liberación humana y cada decisión justificada. AUTO-06: <span id="auto06"></span>.</li>
+        <li><b>Investigación:</b> fases del ataque, cadena de víctimas, predicción de la siguiente y línea temporal para el jurado.</li>
+        <li><b>Buzón organizado:</b> 10 carpetas y un flujo de Power Automate que ordena cada correo nuevo sin romper la ingesta.</li>
+        <li><b>Gestión de crisis:</b> respuestas al director con plazos de 10 y 20 minutos (acuse y primera respuesta).</li>
+      </ul>
+    </div>
+  </section>
+
+  <section>
+    <h2>Lo que no salió bien</h2>
+    <div class="panel" id="lecciones"></div>
+  </section>
+
+  <section>
+    <h2>Próximos pasos</h2>
+    <div class="panel">
+      <ul class="clean">
+        <li>Rotar la clave de la API por un canal seguro y ejecutar la cola de bloqueos, verificando cada uno.</li>
+        <li>Aislar LAB-APP-04, LAB-WS-17 y LAB-FS-01 preservando evidencias; revocar sesiones y credenciales de las cuentas *moreno.</li>
+        <li>Restaurar en un entorno aislado desde copias anteriores al compromiso y acordar RTO/RPO por servicio.</li>
+        <li>Bloquear 198.51.100.77 y las IPs de la cadena tras revisión humana.</li>
+        <li>Verificar con el banco el pago desviado; congelar los cambios en datos de proveedores.</li>
+        <li>Jurídico y protección de datos: decidir sobre la notificación (72 h) con hechos verificados.</li>
+      </ul>
+    </div>
+  </section>
+
+  <p class="foot">Fuentes: base de datos del equipo (vistas v_kpis, v_cadena_*, v_decisiones_bloqueo, v_stats_franja), buzón del reto (correos del director) y Analisis_economico_Sampol.xlsx. RGPD art. 83; NIS2 art. 34. Documento completo para PDF: docs/informe/INFORME.md.</p>
+</div>
+
+<script>
+const D = __DATA__;
+const eur = x => Math.round(x).toLocaleString('es-ES') + ' €';
+const keur = x => x >= 1e6 ? (x/1e6).toLocaleString('es-ES',{maximumFractionDigits:2}) + ' M€' : Math.round(x/1000).toLocaleString('es-ES') + ' k€';
+const $ = id => document.getElementById(id);
+const el = (t, html) => { const e = document.createElement(t); if (html != null) e.innerHTML = html; return e; };
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const medio = D.coste[1];
+const nv = D.victimas.length;
+const pend = D.acciones.filter(a => a.estado === 'PENDIENTE').length;
+
+$('gen').textContent = D.generado;
+$('lead').textContent = `Una intrusión ha saltado de cuenta en cuenta: ${nv} cuentas *moreno en ${nv} equipos de ${D.n_sedes} sedes, todas en fase de impacto. El director confirma ransomware con doble extorsión, 18 GB enviados fuera, copias debilitadas y un pago manipulado. Aquí está lo que puede costar, quién está comprometido y qué hemos hecho.`;
+$('banner').innerHTML = `<b>${pend} bloqueos en cola y 0 ejecutados.</b> La API de bloqueo rechaza la clave del equipo (401) desde la noche del 03/11, tras un intento de reenviar la ficha de credenciales a una cuenta externa (12:30). Las decisiones están tomadas y justificadas en la base de datos; falta la clave nueva para ejecutarlas.`;
+$('k1').textContent = D.kpis.correos_recibidos;
+$('k2').textContent = nv;
+$('k2l').textContent = `cuentas comprometidas en ${D.n_sedes} sedes (cadena *moreno)`;
+$('k3').textContent = keur(medio.total);
+$('k4').textContent = keur(medio.evitado_auto06);
+$('parada').textContent = eur(D.parada_hora);
+
+// barras por escenario
+const max = Math.max(...D.coste.map(c => c.total));
+D.coste.forEach(c => {
+  const row = el('div'); row.className = 'bar-row';
+  const seg = [[c.parada,'var(--impacto)','Parada'],[c.respuesta + c.restauracion,'var(--entrada)','Respuesta y restauración'],[c.externos + c.comunicacion,'var(--compromiso)','Forense, jurídico y comunicación']];
+  row.append(el('span', `<b>${c.escenario}</b>`));
+  const bar = el('div'); bar.className = 'bar'; bar.setAttribute('role','img');
+  bar.setAttribute('aria-label', `${c.escenario}: ${eur(c.total)}`);
+  seg.forEach(([v,col,n]) => { const s = el('span'); s.style.width = (v/max*100) + '%'; s.style.background = col; s.title = `${n}: ${eur(v)}`; bar.append(s); });
+  row.append(bar, el('span', `<span class="mono">${eur(c.total)}</span>`));
+  $('bars').append(row);
+});
+const filas = [['Horas de parada por sede','horas_parada','D'],['Parada del servicio','parada','D·BD'],['Respuesta (analistas)','respuesta','H'],['Restauración de equipos y servidores','restauracion','H'],['Forense y asesoría jurídica','externos','H'],['Notificación y comunicación','comunicacion','H'],['Total','total','']];
+$('tcoste').innerHTML = `<thead><tr><th>Concepto</th>${D.coste.map(c => `<th class="num">${c.escenario}</th>`).join('')}<th>Origen</th></tr></thead><tbody>` +
+  filas.map(([n,k,o]) => `<tr class="${k==='total'?'total':''}"><td>${n}</td>${D.coste.map(c => `<td class="num">${k==='horas_parada' ? c[k]+' h' : eur(c[k])}</td>`).join('')}<td>${o ? `<span class="tag">${o}</span>` : ''}</td></tr>`).join('') +
+  `<tr><td>Evitable con AUTO-06</td>${D.coste.map(c => `<td class="num">${eur(c.evitado_auto06)}</td>`).join('')}<td><span class="tag">BD·H</span></td></tr></tbody>`;
+
+// SOC y ROI
+$('soc1').textContent = eur(D.soc.coste_mes);
+$('soc2').innerHTML = `El <b>${Math.round(D.soc.pct_noche*100)} %</b> de las alertas del buzón llega en guardia de noche (22:00-08:00), la franja más cara y con menos personal <span class="tag">BD</span>.`;
+$('soc3').innerHTML = `Ruido medido: <b>${(D.ruido.pct*100).toLocaleString('es-ES',{maximumFractionDigits:1})} %</b> (${D.ruido.ruido} de ${D.ruido.correos}: duplicados, informativos, no SOC y malformados) <span class="tag">BD</span>; el Excel suponía entre el 55 y el 70 %.`;
+const r = D.roi_real;
+$('troi').innerHTML = `<thead><tr><th>Con el ruido real</th><th class="num">Valor</th></tr></thead><tbody>
+<tr><td>Ahorro neto mensual</td><td class="num">${eur(r.ahorro_neto_mes)}</td></tr>
+<tr><td>Inversión inicial</td><td class="num">${eur(r.inversion)}</td></tr>
+<tr><td>Recuperación</td><td class="num">${r.recuperacion_meses ? r.recuperacion_meses.toLocaleString('es-ES',{maximumFractionDigits:1}) + ' meses' : '—'}</td></tr>
+<tr><td>ROI del primer año</td><td class="num">${Math.round(r.roi_1*100).toLocaleString('es-ES')} %</td></tr></tbody>`;
+
+// forense
+const grupo = {RECONOCIMIENTO:'entrada',ACCESO_INICIAL:'entrada',CREDENCIALES:'entrada',COMPROMISO:'compromiso',RECOLECCION:'compromiso',MANDO_CONTROL:'impacto',EJECUCION:'impacto',IMPACTO:'impacto'};
+const orden = ['RECONOCIMIENTO','ACCESO_INICIAL','CREDENCIALES','COMPROMISO','RECOLECCION','MANDO_CONTROL','EJECUCION','IMPACTO'];
+const nombreF = {RECONOCIMIENTO:'Reconocimiento',ACCESO_INICIAL:'Phishing',CREDENCIALES:'Fuerza bruta',COMPROMISO:'Cuenta comprometida',RECOLECCION:'Lectura indebida',MANDO_CONTROL:'Mando y control',EJECUCION:'Ejecución',IMPACTO:'Impacto'};
+const minG = D.min_ganados;
+$('forense-lead').textContent = `Una cuenta nueva cada ~${Math.round(D.prediccion.min_medios_entre_avisos || 0)} min, con equipos numerados en orden y sedes en rotación (${D.sedes_lista.join(', ')}). Se alternan dos vías: robo de credenciales (phishing, fuerza bruta, acceso no reconocido) y explotación del equipo (sondeo, explotación, proceso anómalo). En la primera, AUTO-06 detecta el compromiso entre ${Math.min(...minG)} y ${Math.max(...minG)} min antes que la alerta crítica.`;
+$('auto06').textContent = `${minG.length} de ${nv} víctimas detectadas entre ${Math.min(...minG)} y ${Math.max(...minG)} min antes que la alerta crítica, 0 falsos positivos`;
+$('tvict').innerHTML = `<thead><tr><th>#</th><th>Cuenta</th><th>Equipo · sede</th><th>IP</th><th>Primer aviso</th><th>Fases alcanzadas</th><th>Antelación</th><th>Bloqueo</th></tr></thead><tbody>` +
+  D.victimas.map(v => {
+    const fs = new Set(D.fases.filter(f => f.victima === v.victima).map(f => f.fase));
+    const strip = `<span class="phases" role="img" aria-label="${[...fs].map(f=>nombreF[f]).join(', ')}">` + orden.map(f => `<b title="${nombreF[f]}" style="${fs.has(f) ? 'background:var(--' + grupo[f] + ')' : ''}"></b>`).join('') + '</span>';
+    const ip = (D.ips[v.victima] || []).join(', ') || esc(v.ips) || '—';
+    return `<tr><td class="num">${v.orden_victima}</td><td><b>${esc(v.victima.split('@')[0])}</b></td><td>${esc(v.equipos)} · ${esc(v.sedes)}</td><td class="mono">${esc(ip)}</td><td class="mono">${esc(v.primer_aviso)}</td><td>${strip}</td><td class="num">${v.min_ganados ? '+' + v.min_ganados + ' min' : '—'}</td><td><span class="chip">${v.bloqueo_confirmado ? 'bloqueado' : 'en cola'} · ${v.origen_bloqueo === 'MANUAL' ? 'manual' : 'auto'}</span></td></tr>`;
+  }).join('') + '</tbody>';
+$('totros').innerHTML = `<thead><tr><th>Aviso</th><th>Cuenta</th><th>Hecho</th></tr></thead><tbody>` +
+  D.otros.filter(o => !/moreno@/.test(o.usuario || '')).map(o => `<tr><td class="mono">${esc(o.aviso)}</td><td>${esc((o.usuario||'—').split('@')[0])}</td><td>${esc(o.titulo)} <span class="tag">${esc(o.gravedad)}</span></td></tr>`).join('') + '</tbody>';
+$('aislados').textContent = `Accesos no reconocidos sin phishing ni fuerza bruta previos (AUTO-06 no los bloquea; revisión humana): ${D.aislados.map(a => a.usuario.split('@')[0]).join(', ')}.`;
+
+// lecciones
+const L = [
+ ['La ficha con credenciales se intentó reenviar a una Gmail desde la cuenta del equipo; la API quedó revocada.','Credenciales solo en .env y gestor de secretos. Ante una exposición, pedir la rotación por un canal seguro.'],
+ [`0 bloqueos ejecutados: ${pend} decisiones correctas esperan en cola.`,'Prever una vía alternativa de contención con registro y una alarma cuando la API devuelve 401.'],
+ ['La extracción de campos estaba rota (usuario «relacionada» en 110 de 110 alertas) hasta la migración 007.','Probar con correos reales desde el principio, no solo con datos sintéticos.'],
+ ['La corroboración contaba los reenvíos como alertas nuevas (falso positivo de slopez, corregido sin llegar a ejecutarse).','Contar por identificador de alerta y probar antes de activar reglas que bloquean.'],
+ ['La ingesta dependía de un cron de GitHub que no se ejecutaba solo.','Ingesta directa desde Power Automate a la BD y alarma de retraso.'],
+ ['El inicio de sesión en Graph falló y no había conexión de PostgreSQL en Power Automate.','Validar antes del evento licencias, conectores y permisos.'],
+ ['En Outlook se pulsó «Copiar» en vez de «Mover» (30 copias).','Confirmar las acciones masivas o automatizarlas de forma revisable.'],
+ ['Plazos de 10 y 20 minutos con el equipo saturado: 2 directrices sin responder.','Turnos, plantillas de acuse y un responsable de comunicación con dirección.'],
+];
+L.forEach(([a,b]) => { const d = el('div'); d.className = 'lesson'; d.append(el('p', esc(a)), el('p', '<span class="muted">' + esc(b) + '</span>')); $('lecciones').append(d); });
+</script>
