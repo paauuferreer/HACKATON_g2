@@ -1,3 +1,4 @@
+import {readChain,readCosts} from './investigation.mjs';
 import {createHash,timingSafeEqual} from 'node:crypto';
 
 export class HttpError extends Error {constructor(status,message){super(message);this.status=status;}}
@@ -39,6 +40,8 @@ export async function checkReadiness(client){
 }
 export async function readDashboard(client,url,actor,env){
  const requested=url.searchParams.get('view');
+ if(requested==='chain')return readChain(client,url);
+ if(requested==='costs')return readCosts();
  if(requested)throw new HttpError(503,'Esta vista requiere ampliar el contrato de PostgreSQL. La web de producción continúa en Sites.');
  const offsetText=url.searchParams.get('offset')||'0';
  if(!/^\d{1,6}$/.test(offsetText))throw new HttpError(400,'Paginación no válida.');

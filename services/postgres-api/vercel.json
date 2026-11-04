@@ -3,6 +3,20 @@
   "framework": null,
   "buildCommand": null,
   "installCommand": "npm ci --ignore-scripts",
-  "rewrites": [{ "source": "/soc", "destination": "/api/soc" }, { "source": "/health", "destination": "/api/health" }],
-  "functions": { "api/*.mjs": { "maxDuration": 30 } }
+  "rewrites": [
+    {
+      "source": "/soc",
+      "destination": "/api/soc"
+    },
+    {
+      "source": "/health",
+      "destination": "/api/health"
+    }
+  ],
+  "functions": {
+    "api/*.mjs": {
+      "maxDuration": 30,
+      "includeFiles": "report/*.json"
+    }
+  }
 }

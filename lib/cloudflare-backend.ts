@@ -9,10 +9,10 @@ export async function guard(request:Request,write=false){
  if(write&&request.headers.get('origin')!==new URL(request.url).origin)throw new HttpError(403,'Origen no autorizado.');
  return user;
 }
-export async function external(request:Request,path:string,actor=''){
- const e=env as unknown as Record<string,string>;if(!e.SOC_BACKEND_URL)return null;
+export async function external(request:Request,path:string,actor='',analytics=false){
+ const e=env as unknown as Record<string,string>;const backend=analytics?(e.SOC_ANALYTICS_BACKEND_URL||e.SOC_BACKEND_URL):e.SOC_BACKEND_URL;if(!backend)return null;
  if(!e.SOC_BACKEND_TOKEN)throw new HttpError(503,'Falta el secreto de conexión PostgreSQL.');
- const target=new URL(e.SOC_BACKEND_URL);if(target.protocol!=='https:'||target.username||target.password||target.search||target.hash)throw new HttpError(503,'El backend requiere una URL HTTPS sin credenciales.');
+ const target=new URL(backend);if(target.protocol!=='https:'||target.username||target.password||target.search||target.hash)throw new HttpError(503,'El backend requiere una URL HTTPS sin credenciales.');
  const headers:Record<string,string>={'Authorization':`Bearer ${e.SOC_BACKEND_TOKEN}`,'Content-Type':'application/json','X-SOC-Actor':actor};
  const response=await fetch(target.href.replace(/\/$/,'')+path,{method:request.method,headers,...(request.method==='POST'?{body:await request.arrayBuffer()}:{}),signal:AbortSignal.timeout(25000),redirect:'error'});
  const out=new Headers({'Cache-Control':'private, no-store','X-Content-Type-Options':'nosniff'});
