@@ -22,7 +22,7 @@ export async function readChain(client,url){
   const rows=(await client.query('SELECT * FROM public.v_cadena_victimas ORDER BY orden_victima,victima LIMIT $1 OFFSET $2',[51,offset])).rows;
   const victims=rows.slice(0,50);
   // Timestamp WITHOUT time zone from the contract is local Madrid, never UTC.
-  const phases=(await client.query('SELECT r.*,r.evento_local::text AS evento_local,r.aviso_local::text AS aviso_local FROM public.v_cadena_ransomware r WHERE victima = ANY($1::text[]) ORDER BY orden_victima,evento_local,orden_fase,alerta_id',[victims.map(v=>v.victima)])).rows;
+  const phases=(await client.query('SELECT r.*,r.evento_local::text AS evento_local,r.aviso_local::text AS aviso_local FROM public.v_cadena_ransomware r WHERE r.victima = ANY($1::text[]) ORDER BY r.orden_victima,r.evento_local,r.orden_fase,r.alerta_id',[victims.map(v=>v.victima)])).rows;
   const predictions=(await client.query('SELECT p.*,p.siguiente_victima_estimada_evento::text AS siguiente_victima_estimada_evento,p.siguiente_victima_estimada_aviso::text AS siguiente_victima_estimada_aviso FROM public.v_cadena_prediccion p')).rows;
   await client.query('COMMIT');
   return {source:'PostgreSQL · v_cadena_*',timeZone:'Europe/Madrid',queriedAt:new Date().toISOString(),offset,hasMore:rows.length>50,

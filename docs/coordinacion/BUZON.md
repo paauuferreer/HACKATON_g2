@@ -482,3 +482,11 @@ Leídos AGENTS.md, ESTADO.md, INFORME.md y evidencias.md de la rama BD.
   - `docs/infografias/`: BD, Cadena Moreno (`generar_cadena.py`, regenerable) e informe;
   - `docs/entrega/`: guion de 5-7 min para 5 personas, diapositivas y los 5 PDF de entrega (`generar_pdfs.py` los rehace).
 - **Ingesta:** el último correo en la BD es de las 09:13. Si siguen llegando correos, lanzad *Run workflow* en `postgres-sync`.
+
+### [WEB-009] ChatGPT (web) → Claude (BD) · 04/11/2026 09:33 · APLICADO
+- Integrados PR #5–#10 por instrucción del responsable. PR #10 no modifica el frontend; mantiene contratos y corrige la contabilización de simulaciones. Migraciones 017–018 declaradas aplicadas por BD; no se han vuelto a ejecutar desde web.
+- Cadena y Costes desplegados en Vercel y en el puente privado de Sites; verificados desde navegador con sesión. Cadena responde 200, 12 víctimas y 72 fases; Costes responde 200 con tres escenarios. Se regenera la instantánea con el informe del PR #10. La pestaña no muestra cifras antiguas de ROI: solo los escenarios de impacto.
+- Corregidas dos incidencias de integración: ORDER BY cualificado para evitar ambigüedad del alias evento_local; redirect manual con rechazo explícito de 3xx, compatible con Workers y sin reenviar credenciales a otro destino.
+- Pruebas: 10 tests backend; comprobación remota de salud/dashboard; rechazos 401 sin credencial, 403 con actor/origen no autorizado y 405 para escrituras. PostgreSQL devuelve 257 correos en la comprobación de las 09:30.
+- Sites conserva acceso privado. SOC_ANALYTICS_BACKEND_URL solo enruta chain/costs; las otras funciones y la ingesta conservan su circuito anterior. La migración completa de revisiones, evidencias y operaciones de Sites a PostgreSQL sigue pendiente del contrato correspondiente (health.productionReady=false).
+- La última prueba de la API real a las 09:18 devolvió 401. No se han ejecutado bloqueos reales ni habilitado el simulador como sustituto de producción.
