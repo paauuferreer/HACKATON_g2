@@ -60,6 +60,7 @@ tr.total td{font-weight:600;border-top:2px solid var(--line)}
 .phases{display:flex;gap:2px}
 .phases b{width:12px;height:12px;border-radius:2px;background:var(--grid);display:block}
 .chip{font-family:var(--f-mono);font-size:11px;padding:1px 6px;border-radius:10px;border:1px solid var(--warn-line);background:var(--warn-bg);color:var(--warn-ink);white-space:nowrap}
+  .cols > .panel{align-content:start}
 ul.clean{margin:0;padding-left:18px;display:grid;gap:6px}
 .lesson{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;border-top:1px solid var(--line);padding-top:10px}
 .lesson:first-of-type{border-top:0;padding-top:0}
@@ -81,7 +82,7 @@ a{color:var(--entrada)}
     <div class="stat"><span class="n" id="k1"></span><span class="l">correos del SOC procesados, clasificados con la taxonomía INCIBE</span></div>
     <div class="stat"><span class="n" id="k2"></span><span class="l" id="k2l"></span></div>
     <div class="stat"><span class="n" id="k3"></span><span class="l">coste estimado del incidente (escenario medio)</span></div>
-    <div class="stat"><span class="n" id="k4"></span><span class="l">coste evitable con la detección temprana AUTO-06 (escenario medio)</span></div>
+    <div class="stat"><span class="n" id="k4"></span><span class="l">coste evitable estimado con AUTO-06 (escenario medio; contrafactual, no es ahorro realizado)</span></div>
   </section>
 
   <section>
@@ -103,7 +104,9 @@ a{color:var(--entrada)}
       <div class="panel">
         <h3>Retorno de la solución</h3>
         <div class="scroll"><table id="troi"></table></div>
-        <p class="muted" style="font-size:13px">La solución propia se paga en semanas y a 3 años supera a un SIEM/SOAR comercial (60.000 €/año + 20.000 € de implantación <span class="tag">D</span>). Las horas liberadas se dedican a investigar.</p>
+        <p class="muted" style="font-size:13px" id="roi-nota"></p>
+        <h3>Bloqueo automático</h3>
+        <div class="scroll"><table id="tauto"></table></div>
       </div>
     </div>
   </section>
@@ -121,6 +124,7 @@ a{color:var(--entrada)}
         <h3>Lo que cuenta el director</h3>
         <ul class="clean">
           <li><b>LAB-FS-01</b>: archivos <span class="mono">.locked</span> y nota de rescate (1:05).</li>
+          <li><b>5:30</b>: Infra bloquea el ataque y aísla el servidor. Desde entonces no ha aparecido la víctima prevista de la cadena.</li>
           <li><b>LAB-WS-17</b>: sesión activa contra LAB-FS-01; reloj desfasado 11 min.</li>
           <li><b>LAB-APP-04</b>: 18 GB hacia <span class="mono">198.51.100.77</span>, <span class="mono">auditoria_2026.7z</span>, tarea «System Health Check» y herramienta remota sin validar.</li>
           <li><b>LAB-BKP-02</b>: retención de copias reducida; la identidad investigada tenía permisos.</li>
@@ -141,7 +145,7 @@ a{color:var(--entrada)}
     <h2>Qué hicimos</h2>
     <div class="panel">
       <ul class="clean">
-        <li><b>Base de datos en Azure (16 migraciones):</b> bandeja inmutable con huella SHA-256, clasificación INCIBE con 39 reglas explicables, duplicados, inconsistencias y correos manipulados.</li>
+        <li><b>Base de datos en Azure (18 migraciones):</b> bandeja inmutable con huella SHA-256, clasificación INCIBE con 39 reglas explicables, duplicados, inconsistencias y correos manipulados.</li>
         <li><b>Autenticidad del remitente</b> por cabeceras de Exchange (SPF, AuthAs Internal, SHA-256). Las directrices solo valen si vienen de dirti@.</li>
         <li><b>Bloqueo automático:</b> AUTO-05 (crítico verificado) y AUTO-06 (correlación de fases), con lista blanca, liberación humana y cada decisión justificada. AUTO-06: <span id="auto06"></span>.</li>
         <li><b>Investigación:</b> fases del ataque, cadena de víctimas, predicción de la siguiente y línea temporal para el jurado.</li>
@@ -175,7 +179,7 @@ a{color:var(--entrada)}
 
 <script>
 const D = __DATA__;
-const eur = x => Math.round(x).toLocaleString('es-ES') + ' €';
+const eur = x => Math.round(x).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.') + ' €';   // es-ES no agrupa 4 cifras
 const keur = x => x >= 1e6 ? (x/1e6).toLocaleString('es-ES',{maximumFractionDigits:2}) + ' M€' : Math.round(x/1000).toLocaleString('es-ES') + ' k€';
 const $ = id => document.getElementById(id);
 const el = (t, html) => { const e = document.createElement(t); if (html != null) e.innerHTML = html; return e; };
@@ -186,7 +190,7 @@ const pend = D.acciones.filter(a => a.estado === 'PENDIENTE').length;
 
 $('gen').textContent = D.generado;
 $('lead').textContent = `Una intrusión ha saltado de cuenta en cuenta: ${nv} cuentas *moreno en ${nv} equipos de ${D.n_sedes} sedes, todas en fase de impacto. El director confirma ransomware con doble extorsión, 18 GB enviados fuera, copias debilitadas y un pago manipulado. Aquí está lo que puede costar, quién está comprometido y qué hemos hecho.`;
-$('banner').innerHTML = `<b>${pend} bloqueos en cola y 0 ejecutados.</b> La API de bloqueo rechaza la clave del equipo (401) desde la noche del 03/11, tras un intento de reenviar la ficha de credenciales a una cuenta externa (12:30). Las decisiones están tomadas y justificadas en la base de datos; falta la clave nueva para ejecutarlas.`;
+$('banner').innerHTML = `<b>${pend} bloqueos en cola y 0 ejecutados por el equipo.</b> La API de bloqueo rechaza la clave (401) desde la noche del 03/11 y la organización no la repondrá; la causa no está confirmada. La contención real la hizo Infra: a las 5:30 el director informó de que el servidor estaba aislado. Las decisiones del equipo están registradas y justificadas en la base de datos`;
 if (D.demo) { const pd = document.createElement('p'); pd.className = 'muted'; pd.style.fontSize = '13px'; pd.textContent = D.demo; document.querySelector('.banner').after(pd); }
 $('k1').textContent = D.kpis.correos_recibidos;
 $('k2').textContent = nv;
@@ -210,18 +214,22 @@ D.coste.forEach(c => {
 const filas = [['Horas de parada por sede','horas_parada','D'],['Parada del servicio','parada','D·BD'],['Respuesta (analistas)','respuesta','H'],['Restauración de equipos y servidores','restauracion','H'],['Forense y asesoría jurídica','externos','H'],['Notificación y comunicación','comunicacion','H'],['Total','total','']];
 $('tcoste').innerHTML = `<thead><tr><th>Concepto</th>${D.coste.map(c => `<th class="num">${c.escenario}</th>`).join('')}<th>Origen</th></tr></thead><tbody>` +
   filas.map(([n,k,o]) => `<tr class="${k==='total'?'total':''}"><td>${n}</td>${D.coste.map(c => `<td class="num">${k==='horas_parada' ? c[k]+' h' : eur(c[k])}</td>`).join('')}<td>${o ? `<span class="tag">${o}</span>` : ''}</td></tr>`).join('') +
-  `<tr><td>Evitable con AUTO-06</td>${D.coste.map(c => `<td class="num">${eur(c.evitado_auto06)}</td>`).join('')}<td><span class="tag">BD·H</span></td></tr></tbody>`;
+  `<tr><td>Evitable con AUTO-06 (contrafactual)</td>${D.coste.map(c => `<td class="num">${eur(c.evitado_auto06)}</td>`).join('')}<td><span class="tag">BD·H</span></td></tr></tbody>`;
 
 // SOC y ROI
 $('soc1').textContent = eur(D.soc.coste_mes);
 $('soc2').innerHTML = `El <b>${Math.round(D.soc.pct_noche*100)} %</b> de las alertas del buzón llega en guardia de noche (22:00-08:00), la franja más cara y con menos personal <span class="tag">BD</span>.`;
-$('soc3').innerHTML = `Ruido medido: <b>${(D.ruido.pct*100).toLocaleString('es-ES',{maximumFractionDigits:1})} %</b> (${D.ruido.ruido} de ${D.ruido.correos}: duplicados, informativos, no SOC y malformados) <span class="tag">BD</span>; el Excel suponía entre el 55 y el 70 %.`;
-const r = D.roi_real;
-$('troi').innerHTML = `<thead><tr><th>Con el ruido real</th><th class="num">Valor</th></tr></thead><tbody>
-<tr><td>Ahorro neto mensual</td><td class="num">${eur(r.ahorro_neto_mes)}</td></tr>
-<tr><td>Inversión inicial</td><td class="num">${eur(r.inversion)}</td></tr>
-<tr><td>Recuperación</td><td class="num">${r.recuperacion_meses ? r.recuperacion_meses.toLocaleString('es-ES',{maximumFractionDigits:1}) + ' meses' : '—'}</td></tr>
-<tr><td>ROI del primer año</td><td class="num">${Math.round(r.roi_1*100).toLocaleString('es-ES')} %</td></tr></tbody>`;
+$('soc3').innerHTML = `Ruido medido: <b>${(D.ruido.pct*100).toLocaleString('es-ES',{maximumFractionDigits:1})} %</b> (${D.ruido.ruido} de ${D.ruido.correos}: duplicados, informativos, no SOC y malformados) <span class="tag">BD</span>; el Excel usa un ${D.excel_roi.ruido_ejemplo} de ejemplo.`;
+const r = D.roi_real, x = D.excel_roi;
+const meses = m => m ? m.toLocaleString('es-ES',{maximumFractionDigits:1}) + ' meses' : 'no se recupera';
+$('troi').innerHTML = `<thead><tr><th></th><th class="num">Excel realista</th><th class="num">Ruido real</th></tr></thead><tbody>
+<tr><td>Inversión inicial</td><td class="num">${esc(x.inversion)}</td><td class="num">${eur(r.inversion)}</td></tr>
+<tr><td>Ahorro neto mensual</td><td class="num">${esc(x.ahorro_neto)}</td><td class="num">${eur(r.ahorro_neto_mes)}</td></tr>
+<tr><td>Recuperación</td><td class="num">${esc(x.recuperacion)}</td><td class="num">${meses(r.recuperacion_meses)}</td></tr>
+<tr><td>ROI del primer año</td><td class="num">${esc(x.roi1)}</td><td class="num">${Math.round(r.roi_1*100).toLocaleString('es-ES')} %</td></tr></tbody>`;
+$('roi-nota').innerHTML = `Hipótesis prudentes del Excel revisado <span class="tag">H</span>. A 3 años, construir cuesta ${esc(x.coste_3a[0])} frente a ${esc(x.coste_3a[1])} de un SIEM/SOAR comercial (60.000 €/año + 20.000 € <span class="tag">D</span>). Las horas liberadas se dedican a investigar.`;
+$('tauto').innerHTML = `<thead><tr><th>Escenario</th><th class="num">Ahorro + evitado / año</th><th class="num">Recuperación</th><th class="num">ROI 1.er año</th></tr></thead><tbody>` +
+  x.auto.map(a => `<tr><td>${esc(a.escenario)}</td><td class="num">${esc(a.ahorro)} + ${esc(a.evitado)}</td><td class="num">${esc(a.recuperacion)}</td><td class="num">${esc(a.roi1)}</td></tr>`).join('') + '</tbody>';
 
 // forense
 const grupo = {RECONOCIMIENTO:'entrada',ACCESO_INICIAL:'entrada',CREDENCIALES:'entrada',COMPROMISO:'compromiso',RECOLECCION:'compromiso',MANDO_CONTROL:'impacto',EJECUCION:'impacto',IMPACTO:'impacto'};
@@ -229,7 +237,7 @@ const orden = ['RECONOCIMIENTO','ACCESO_INICIAL','CREDENCIALES','COMPROMISO','RE
 const nombreF = {RECONOCIMIENTO:'Reconocimiento',ACCESO_INICIAL:'Phishing',CREDENCIALES:'Fuerza bruta',COMPROMISO:'Cuenta comprometida',RECOLECCION:'Lectura indebida',MANDO_CONTROL:'Mando y control',EJECUCION:'Ejecución',IMPACTO:'Impacto'};
 const minG = D.min_ganados;
 $('forense-lead').textContent = `Una cuenta nueva cada ~${Math.round(D.prediccion.min_medios_entre_avisos || 0)} min, con equipos numerados en orden y sedes en rotación (${D.sedes_lista.join(', ')}). Se alternan dos vías: robo de credenciales (phishing, fuerza bruta, acceso no reconocido) y explotación del equipo (sondeo, explotación, proceso anómalo). En la primera, AUTO-06 detecta el compromiso entre ${Math.min(...minG)} y ${Math.max(...minG)} min antes que la alerta crítica.`;
-$('auto06').textContent = `${minG.length} de ${nv} víctimas detectadas entre ${Math.min(...minG)} y ${Math.max(...minG)} min antes que la alerta crítica, 0 falsos positivos`;
+$('auto06').textContent = `${minG.length} de ${nv} víctimas detectadas entre ${Math.min(...minG)} y ${Math.max(...minG)} min antes que la alerta crítica, 0 falsos positivos en la simulación sobre el histórico`;
 $('tvict').innerHTML = `<thead><tr><th>#</th><th>Cuenta</th><th>Equipo · sede</th><th>IP</th><th>Primer aviso</th><th>Fases alcanzadas</th><th>Antelación</th><th>Bloqueo</th></tr></thead><tbody>` +
   D.victimas.map(v => {
     const fs = new Set(D.fases.filter(f => f.victima === v.victima).map(f => f.fase));
@@ -243,14 +251,14 @@ $('aislados').textContent = `Accesos no reconocidos sin phishing ni fuerza bruta
 
 // lecciones
 const L = [
- ['La ficha con credenciales se intentó reenviar a una Gmail desde la cuenta del equipo; la API quedó revocada.','Credenciales solo en .env y gestor de secretos. Ante una exposición, pedir la rotación por un canal seguro.'],
+ ['La ficha con credenciales se intentó reenviar a una Gmail desde la cuenta del equipo; después la API rechazó la clave (relación no confirmada).','Credenciales solo en .env y gestor de secretos. Ante una exposición, pedir la rotación por un canal seguro.'],
  [`0 bloqueos ejecutados: ${pend} decisiones correctas esperan en cola.`,'Prever una vía alternativa de contención con registro y una alarma cuando la API devuelve 401.'],
  ['La extracción de campos estaba rota (usuario «relacionada» en 110 de 110 alertas) hasta la migración 007.','Probar con correos reales desde el principio, no solo con datos sintéticos.'],
  ['La corroboración contaba los reenvíos como alertas nuevas (falso positivo de slopez, corregido sin llegar a ejecutarse).','Contar por identificador de alerta y probar antes de activar reglas que bloquean.'],
  ['La ingesta dependía de un cron de GitHub que no se ejecutaba solo.','Ingesta directa desde Power Automate a la BD y alarma de retraso.'],
  ['El inicio de sesión en Graph falló y no había conexión de PostgreSQL en Power Automate.','Validar antes del evento licencias, conectores y permisos.'],
  ['En Outlook se pulsó «Copiar» en vez de «Mover» (30 copias).','Confirmar las acciones masivas o automatizarlas de forma revisable.'],
- ['Plazos de 10 y 20 minutos con el equipo saturado: 2 directrices sin responder.','Turnos, plantillas de acuse y un responsable de comunicación con dirección.'],
+ ['Plazos de 10 y 20 minutos con el equipo saturado: 2 directrices respondidas fuera de plazo.','Turnos, plantillas de acuse y un responsable de comunicación con dirección.'],
 ];
 L.forEach(([a,b]) => { const d = el('div'); d.className = 'lesson'; d.append(el('p', esc(a)), el('p', '<span class="muted">' + esc(b) + '</span>')); $('lecciones').append(d); });
 </script>

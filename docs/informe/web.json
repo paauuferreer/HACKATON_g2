@@ -1,30 +1,73 @@
 {
- "generado": "04/11/2026 05:58",
- "demo": "Demostración (simulador local con el mismo contrato que la API): 13 bloqueos ejecutados y verificados y 1 liberación(es) en un clic. Es una SIMULACIÓN: la contención real espera la clave.",
+ "generado": "04/11/2026 09:28",
+ "excel_roi": {
+  "inversion": "20.000 €",
+  "ahorro_neto": "5.649 €",
+  "recuperacion": "3,5 meses",
+  "roi1": "140,9 %",
+  "roi1_evitado": "190,3 %",
+  "auto": [
+   {
+    "escenario": "Prudente",
+    "ahorro": "4.320 €",
+    "evitado": "1.440 €",
+    "inversion": "4.000 €",
+    "recuperacion": "13,3 meses",
+    "roi1": "−6,5 %"
+   },
+   {
+    "escenario": "Realista",
+    "ahorro": "9.504 €",
+    "evitado": "11.520 €",
+    "inversion": "3.000 €",
+    "recuperacion": "1,9 meses",
+    "roi1": "355,1 %"
+   },
+   {
+    "escenario": "Optimista",
+    "ahorro": "14.904 €",
+    "evitado": "51.840 €",
+    "inversion": "2.000 €",
+    "recuperacion": "0,4 meses",
+    "roi1": "2067,0 %"
+   }
+  ],
+  "coste_3a": [
+   "61.760 €",
+   "216.200 €"
+  ],
+  "balance_3a": [
+   "183.346 €",
+   "119.626 €"
+  ],
+  "mejor_3a": "Construir (propia)",
+  "ruido_ejemplo": "63,2 %"
+ },
+ "demo": "Demostración (simulador local con el mismo contrato que la API): 13 bloqueos ejecutados y verificados y 1 liberación(es) en un clic. Es una SIMULACIÓN: sin clave válida no hay contención por API; la contención real la hizo Infra (5:30).",
  "kpis": {
-  "correos_recibidos": 214,
-  "alertas_total": 207,
-  "duplicadas": 14,
-  "alertas_unicas": 193,
+  "correos_recibidos": 257,
+  "alertas_total": 250,
+  "duplicadas": 20,
+  "alertas_unicas": 230,
   "falsas_alarmas": 0,
-  "no_soc": 6,
-  "pendientes": 187,
+  "no_soc": 10,
+  "pendientes": 220,
   "p1": 0,
-  "sin_clasificar": 4,
+  "sin_clasificar": 9,
   "sospechosos": 11,
   "malformados": 7,
   "malformados_pendientes": 7,
-  "bloqueos_ok": 13
+  "bloqueos_ok": 0
  },
  "ruido": {
-  "ruido": 44,
-  "correos": 214,
-  "pct": 0.2056,
+  "ruido": 63,
+  "correos": 257,
+  "pct": 0.2451,
   "componentes": {
-   "duplicadas": 14,
-   "informativas": 17,
+   "duplicadas": 20,
+   "informativas": 26,
    "falsas_alarmas": 0,
-   "no_soc": 6,
+   "no_soc": 10,
    "malformados": 7
   }
  },
@@ -33,34 +76,34 @@
    "escenario": "Bajo",
    "horas_parada": 2.0,
    "parada": 300000.0,
-   "respuesta": 3960.0,
-   "restauracion": 6500.0,
+   "respuesta": 4320.0,
+   "restauracion": 6800.0,
    "externos": 15000,
    "comunicacion": 5000,
-   "total": 330460.0,
-   "evitado_auto06": 95454.54545454546
+   "total": 331120.0,
+   "evitado_auto06": 100000.0
   },
   {
    "escenario": "Medio",
    "horas_parada": 4.0,
    "parada": 600000.0,
-   "respuesta": 5940.0,
-   "restauracion": 10300.0,
+   "respuesta": 6480.0,
+   "restauracion": 10800.0,
    "externos": 30000,
    "comunicacion": 15000,
-   "total": 661240.0,
-   "evitado_auto06": 267272.72727272724
+   "total": 662280.0,
+   "evitado_auto06": 280000.0
   },
   {
    "escenario": "Alto",
    "horas_parada": 8.0,
    "parada": 1200000.0,
-   "respuesta": 9900.0,
-   "restauracion": 16800.0,
+   "respuesta": 10800.0,
+   "restauracion": 17600.0,
    "externos": 60000,
    "comunicacion": 40000,
-   "total": 1326700.0,
-   "evitado_auto06": 687272.7272727273
+   "total": 1328400.0,
+   "evitado_auto06": 720000.0
   }
  ],
  "soc": {
@@ -68,14 +111,14 @@
   "min_alerta": 12.0,
   "coste_hora": 45.0,
   "coste_mes": 29250.0,
-  "pct_noche": 0.5699481865284974
+  "pct_noche": 0.5217391304347826
  },
  "roi_real": {
-  "ruido_real": 0.2056,
-  "ahorro_neto_mes": 11010.189999999997,
-  "inversion": 12000.0,
-  "recuperacion_meses": 1.0898994476934551,
-  "roi_1": 6.295716981132074
+  "ruido_real": 0.2451,
+  "ahorro_neto_mes": 3851.8187500000004,
+  "inversion": 20000.0,
+  "recuperacion_meses": 5.192352314085391,
+  "roi_1": 0.7730490860849057
  },
  "victimas": [
   {
@@ -272,6 +315,24 @@
    "aviso_compromiso": null,
    "aviso_primera_critica": "03:40",
    "min_ganados": null,
+   "estado_bloqueo": "PENDIENTE",
+   "origen_bloqueo": "AUTOMATICO",
+   "bloqueo_confirmado": false
+  },
+  {
+   "orden_victima": 12,
+   "victima": "lmoreno@sampol.com",
+   "equipos": "gw-madrid-212",
+   "sedes": "Madrid",
+   "ips": "19851100161",
+   "num_fases": 6,
+   "fase_maxima": "Impacto (cifrado / pérdida)",
+   "primer_aviso": "04/11 04:09",
+   "primer_evento": "30/10 12:17",
+   "min_desde_anterior": 72.0,
+   "aviso_compromiso": "04:33",
+   "aviso_primera_critica": "05:10",
+   "min_ganados": 37.0,
    "estado_bloqueo": "PENDIENTE",
    "origen_bloqueo": "AUTOMATICO",
    "bloqueo_confirmado": false
@@ -1333,6 +1394,102 @@
    "evento": "30/10 12:41",
    "min_desde_fase_anterior": 13.0,
    "min_desde_inicio_victima": 65.0
+  },
+  {
+   "victima": "lmoreno@sampol.com",
+   "equipo": "gw-madrid-212",
+   "sede": "Madrid",
+   "ip": "19851100161",
+   "fase": "ACCESO_INICIAL",
+   "nombre_fase": "Phishing",
+   "orden_fase": 2,
+   "titulo": "Mensaje con formulario falso de acceso",
+   "gravedad": "ALTO",
+   "id_alerta_soc": "AL-20261030-0091",
+   "aviso": "04/11 04:09",
+   "evento": "30/10 12:17",
+   "min_desde_fase_anterior": null,
+   "min_desde_inicio_victima": 0.0
+  },
+  {
+   "victima": "lmoreno@sampol.com",
+   "equipo": "gw-madrid-212",
+   "sede": "Madrid",
+   "ip": "19851100161",
+   "fase": "COMPROMISO",
+   "nombre_fase": "Cuenta comprometida",
+   "orden_fase": 4,
+   "titulo": "Acceso correcto que la persona titular no reconoce",
+   "gravedad": "ALTO",
+   "id_alerta_soc": "AL-20261030-0092",
+   "aviso": "04/11 04:33",
+   "evento": "30/10 12:43",
+   "min_desde_fase_anterior": 26.0,
+   "min_desde_inicio_victima": 26.0
+  },
+  {
+   "victima": "lmoreno@sampol.com",
+   "equipo": "gw-madrid-212",
+   "sede": "Madrid",
+   "ip": "19851100161",
+   "fase": "EJECUCION",
+   "nombre_fase": "Ejecución / persistencia",
+   "orden_fase": 7,
+   "titulo": "Proceso malicioso detectado en el equipo",
+   "gravedad": "ALTO",
+   "id_alerta_soc": "AL-20261030-0093",
+   "aviso": "04/11 04:58",
+   "evento": "30/10 12:56",
+   "min_desde_fase_anterior": 13.0,
+   "min_desde_inicio_victima": 39.0
+  },
+  {
+   "victima": "lmoreno@sampol.com",
+   "equipo": "gw-madrid-212",
+   "sede": "Madrid",
+   "ip": "19851100161",
+   "fase": "MANDO_CONTROL",
+   "nombre_fase": "Mando y control",
+   "orden_fase": 6,
+   "titulo": "Conexiones periódicas a infraestructura de mando",
+   "gravedad": "CRITICO",
+   "id_alerta_soc": "AL-20261030-0094",
+   "aviso": "04/11 05:10",
+   "evento": "30/10 13:09",
+   "min_desde_fase_anterior": 13.0,
+   "min_desde_inicio_victima": 52.0
+  },
+  {
+   "victima": "lmoreno@sampol.com",
+   "equipo": "gw-madrid-212",
+   "sede": "Madrid",
+   "ip": "19851100161",
+   "fase": "RECOLECCION",
+   "nombre_fase": "Lectura indebida",
+   "orden_fase": 5,
+   "titulo": "Lectura de documentos fuera de los permisos aprobados",
+   "gravedad": "ALTO",
+   "id_alerta_soc": "AL-20261030-0095",
+   "aviso": "04/11 05:23",
+   "evento": "30/10 13:22",
+   "min_desde_fase_anterior": 13.0,
+   "min_desde_inicio_victima": 65.0
+  },
+  {
+   "victima": "lmoreno@sampol.com",
+   "equipo": "gw-madrid-212",
+   "sede": "Madrid",
+   "ip": "19851100161",
+   "fase": "IMPACTO",
+   "nombre_fase": "Impacto (cifrado / pérdida)",
+   "orden_fase": 8,
+   "titulo": "Datos perdidos tras avería de almacenamiento",
+   "gravedad": "ALTO",
+   "id_alerta_soc": "AL-20261030-0096",
+   "aviso": "04/11 05:30",
+   "evento": "30/10 13:35",
+   "min_desde_fase_anterior": 13.0,
+   "min_desde_inicio_victima": 78.0
   }
  ],
  "ips": {
@@ -1374,17 +1531,17 @@
   ]
  },
  "prediccion": {
-  "victimas": 11,
-  "min_medios_entre_victimas": 48.0,
-  "inicio_ultima_victima": "2026-10-30T11:36:49",
-  "ultima_victima": "vmoreno@sampol.com",
-  "siguiente_victima_estimada_evento": "2026-10-30T12:24:49",
+  "victimas": 12,
+  "min_medios_entre_victimas": 47.0,
+  "inicio_ultima_victima": "2026-10-30T12:17:49",
+  "ultima_victima": "lmoreno@sampol.com",
+  "siguiente_victima_estimada_evento": "2026-10-30T13:04:49",
   "min_medios_entre_avisos": 74.0,
-  "siguiente_victima_estimada_aviso": "2026-11-04T04:11:41"
+  "siguiente_victima_estimada_aviso": "2026-11-04T05:23:45"
  },
  "acciones": [
   {
-   "usuario_objetivo": "qgomez@sampol.com",
+   "usuario_objetivo": "jmoreno@sampol.com",
    "ip": null,
    "origen": "AUTOMATICO",
    "regla": "AUTO-05",
@@ -1392,7 +1549,7 @@
    "solicitada": "03/11 22:50"
   },
   {
-   "usuario_objetivo": "jmoreno@sampol.com",
+   "usuario_objetivo": "qgomez@sampol.com",
    "ip": null,
    "origen": "AUTOMATICO",
    "regla": "AUTO-05",
@@ -1496,7 +1653,7 @@
    "solicitada": "04/11 04:54"
   },
   {
-   "usuario_objetivo": "qgomez@sampol.com",
+   "usuario_objetivo": "jmoreno@sampol.com",
    "ip": null,
    "origen": "AUTOMATICO",
    "regla": "AUTO-05",
@@ -1504,7 +1661,7 @@
    "solicitada": "04/11 05:58"
   },
   {
-   "usuario_objetivo": "jmoreno@sampol.com",
+   "usuario_objetivo": "qgomez@sampol.com",
    "ip": null,
    "origen": "AUTOMATICO",
    "regla": "AUTO-05",
@@ -1606,6 +1763,30 @@
    "regla": "MANUAL",
    "estado": "EJECUTADA",
    "solicitada": "04/11 05:58"
+  },
+  {
+   "usuario_objetivo": "jfernandez@sampol.com",
+   "ip": null,
+   "origen": "AUTOMATICO",
+   "regla": "AUTO-05",
+   "estado": "PENDIENTE",
+   "solicitada": "04/11 09:04"
+  },
+  {
+   "usuario_objetivo": "hmartinez@sampol.com",
+   "ip": null,
+   "origen": "AUTOMATICO",
+   "regla": "AUTO-05",
+   "estado": "PENDIENTE",
+   "solicitada": "04/11 09:04"
+  },
+  {
+   "usuario_objetivo": "pgonzalez@sampol.com",
+   "ip": null,
+   "origen": "AUTOMATICO",
+   "regla": "AUTO-05",
+   "estado": "PENDIENTE",
+   "solicitada": "04/11 09:04"
   }
  ],
  "otros": [
@@ -1734,9 +1915,104 @@
    "gravedad": "CRITICO",
    "titulo": "Investigación confirma persistencia dirigida en el proyecto",
    "aviso": "04/11 04:27"
+  },
+  {
+   "id_alerta_soc": "AL-20261030-0096",
+   "usuario": "lmoreno@sampol.com",
+   "equipo": "gw-madrid-212",
+   "sede": "Madrid",
+   "gravedad": "ALTO",
+   "titulo": "Datos perdidos tras avería de almacenamiento",
+   "aviso": "04/11 05:30"
+  },
+  {
+   "id_alerta_soc": "AL-20261030-0299",
+   "usuario": "sfernandez@sampol.com",
+   "equipo": "app-valencia-139",
+   "sede": "Valencia",
+   "gravedad": "CRITICO",
+   "titulo": "Investigación confirma persistencia dirigida en el proyecto",
+   "aviso": "04/11 06:28"
+  },
+  {
+   "id_alerta_soc": "AL-20261030-0316",
+   "usuario": "prodriguez@sampol.com",
+   "equipo": "gw-sevilla-156",
+   "sede": "Sevilla",
+   "gravedad": "ALTO",
+   "titulo": "Equipo sustraído de zona restringida",
+   "aviso": "04/11 07:02"
+  },
+  {
+   "id_alerta_soc": "AL-20261030-0325",
+   "usuario": "dgonzalez@sampol.com",
+   "equipo": "srv-palma-005",
+   "sede": "Palma",
+   "gravedad": "ALTO",
+   "titulo": "Suplantación solicita cambio de cuenta de pago",
+   "aviso": "04/11 07:22"
+  },
+  {
+   "id_alerta_soc": "AL-20261030-0336",
+   "usuario": "pgonzalez@sampol.com",
+   "equipo": "gw-bilbao-016",
+   "sede": "Bilbao",
+   "gravedad": "CRITICO",
+   "titulo": "Uso confirmado de cuenta administrativa desde origen no autorizado",
+   "aviso": "04/11 07:35"
+  },
+  {
+   "id_alerta_soc": "AL-20261030-0346",
+   "usuario": "emartinez@sampol.com",
+   "equipo": "pc-sevilla-026",
+   "sede": "Sevilla",
+   "gravedad": "MEDIO",
+   "titulo": "Llamada intenta obtener información del equipo",
+   "aviso": "04/11 08:00"
+  },
+  {
+   "id_alerta_soc": "AL-20261030-0356",
+   "usuario": "pmartinez@sampol.com",
+   "equipo": "gw-madrid-036",
+   "sede": "Madrid",
+   "gravedad": "ALTO",
+   "titulo": "Datos perdidos tras avería de almacenamiento",
+   "aviso": "04/11 08:17"
+  },
+  {
+   "id_alerta_soc": "AL-20261030-0370",
+   "usuario": "ilopez@sampol.com",
+   "equipo": "pc-sevilla-050",
+   "sede": "Sevilla",
+   "gravedad": "CRITICO",
+   "titulo": "Uso confirmado de cuenta administrativa desde origen no autorizado",
+   "aviso": "04/11 08:53"
+  },
+  {
+   "id_alerta_soc": "AL-20261030-0380",
+   "usuario": "tlopez@sampol.com",
+   "equipo": "gw-madrid-060",
+   "sede": "Madrid",
+   "gravedad": "MEDIO",
+   "titulo": "Llamada intenta obtener información del equipo",
+   "aviso": "04/11 08:58"
+  },
+  {
+   "id_alerta_soc": "AL-20261030-0390",
+   "usuario": "isanchez@sampol.com",
+   "equipo": "pc-bilbao-070",
+   "sede": "Bilbao",
+   "gravedad": "ALTO",
+   "titulo": "Datos perdidos tras avería de almacenamiento",
+   "aviso": "04/11 09:05"
   }
  ],
  "aislados": [
+  {
+   "usuario": "ilopez@sampol.com",
+   "decision": "DESCARTAR",
+   "motivo": "Acceso no reconocido sin phishing ni fuerza bruta previos en 120 min: no hay cadena; lo valora una persona"
+  },
   {
    "usuario": "mgonzalez@sampol.com",
    "decision": "DESCARTAR",
@@ -1772,18 +2048,18 @@
   {
    "franja": "LABORAL",
    "descripcion": "Lunes a viernes laborables, 08:00-17:59",
-   "total": 76,
-   "reales": 73,
-   "criticas": 16,
-   "duplicadas": 6
+   "total": 92,
+   "reales": 88,
+   "criticas": 20,
+   "duplicadas": 9
   },
   {
    "franja": "GUARDIA_TARDE",
    "descripcion": "Lunes a viernes laborables, 18:00-21:59",
-   "total": 7,
-   "reales": 6,
-   "criticas": 0,
-   "duplicadas": 0
+   "total": 18,
+   "reales": 17,
+   "criticas": 3,
+   "duplicadas": 3
   },
   {
    "franja": "FIN_DE_SEMANA_FESTIVO",
@@ -1796,8 +2072,8 @@
   {
    "franja": "GUARDIA_NOCHE",
    "descripcion": "Todos los días, 22:00-07:59",
-   "total": 110,
-   "reales": 108,
+   "total": 120,
+   "reales": 115,
    "criticas": 18,
    "duplicadas": 8
   }
@@ -1805,90 +2081,90 @@
  "sedes": [
   {
    "sede": "Palma",
-   "total": 38,
-   "criticas": 10
-  },
-  {
-   "sede": "Barcelona",
-   "total": 32,
-   "criticas": 9
-  },
-  {
-   "sede": "Sevilla",
-   "total": 30,
-   "criticas": 6
-  },
-  {
-   "sede": "Valencia",
-   "total": 30,
-   "criticas": 3
-  },
-  {
-   "sede": "Bilbao",
-   "total": 30,
-   "criticas": 4
+   "total": 44,
+   "criticas": 11
   },
   {
    "sede": "Madrid",
-   "total": 28,
-   "criticas": 2
+   "total": 39,
+   "criticas": 3
+  },
+  {
+   "sede": "Sevilla",
+   "total": 35,
+   "criticas": 7
+  },
+  {
+   "sede": "Barcelona",
+   "total": 35,
+   "criticas": 10
+  },
+  {
+   "sede": "Bilbao",
+   "total": 34,
+   "criticas": 5
+  },
+  {
+   "sede": "Valencia",
+   "total": 33,
+   "criticas": 5
   },
   {
    "sede": "Todas",
-   "total": 5,
+   "total": 10,
    "criticas": 0
   }
  ],
  "clases": [
   {
    "clase": "Otros",
-   "unicas": 42,
-   "ruido": 14
+   "unicas": 49,
+   "ruido": 18
   },
   {
    "clase": "Compromiso de la información",
-   "unicas": 27,
-   "ruido": 0
-  },
-  {
-   "clase": "Intento de intrusión",
-   "unicas": 24,
-   "ruido": 0
+   "unicas": 32,
+   "ruido": 1
   },
   {
    "clase": "Intrusión",
-   "unicas": 22,
+   "unicas": 27,
    "ruido": 2
+  },
+  {
+   "clase": "Intento de intrusión",
+   "unicas": 25,
+   "ruido": 0
   },
   {
    "clase": "Contenido dañino",
-   "unicas": 19,
-   "ruido": 2
+   "unicas": 23,
+   "ruido": 3
   },
   {
    "clase": "Disponibilidad",
-   "unicas": 18,
+   "unicas": 19,
    "ruido": 3
   },
   {
    "clase": "Obtención de información",
-   "unicas": 14,
-   "ruido": 1
+   "unicas": 18,
+   "ruido": 2
   },
   {
    "clase": "Fraude",
-   "unicas": 13,
-   "ruido": 0
+   "unicas": 17,
+   "ruido": 1
   },
   {
    "clase": "Vulnerable",
-   "unicas": 9,
+   "unicas": 10,
    "ruido": 1
   },
   {
    "clase": "Sin clasificar",
-   "unicas": 4,
-   "ruido": 8
+   "unicas": 9,
+   "ruido": 15
   },
   {
    "clase": "Contenido abusivo",
@@ -1903,11 +2179,11 @@
   },
   {
    "ruta": "02 SOC/Críticas y altas",
-   "correos": 135
+   "correos": 158
   },
   {
    "ruta": "02 SOC/Medias y bajas",
-   "correos": 17
+   "correos": 20
   },
   {
    "ruta": "02 SOC/Revisión manual",
@@ -1919,11 +2195,11 @@
   },
   {
    "ruta": "03 Solicitudes (SOL)",
-   "correos": 24
+   "correos": 26
   },
   {
    "ruta": "04 Ruido",
-   "correos": 25
+   "correos": 40
   },
   {
    "ruta": "05 Cuarentena",
@@ -1951,6 +2227,7 @@
   43,
   46,
   40,
-  55
+  55,
+  37
  ]
 }
