@@ -1,16 +1,19 @@
 # Estado compartido del Equipo 2
 
-*Generado automáticamente el 04/11/2026 05:16 (hora de Madrid) con `docs/informe/generar_informe.py`. **Leer antes de cada tarea.** No editar a mano: se regenera con cada «actualiza».*
+*Generado automáticamente el 04/11/2026 05:58 (hora de Madrid) con `docs/informe/generar_informe.py`. **Leer antes de cada tarea.** No editar a mano: se regenera con cada «actualiza».*
 
 ## Ahora mismo
 - **API de bloqueo:** GET `/equipo-2/bloqueos` → **401** ({"detail":"Contraseña de equipo incorrecta o ausente."}). Clave revocada: no se puede ejecutar ningún bloqueo.
-- **Ingesta:** último correo guardado a las 04:54 (22 min sin correos nuevos en la BD). El cron de `postgres-sync` no se ejecuta solo: lanzar *Run workflow* si hace falta.
+- **Ingesta:** último correo guardado a las 04:54 (65 min sin correos nuevos en la BD). El cron de `postgres-sync` no se ejecuta solo: lanzar *Run workflow* si hace falta.
+- **Demo:** Demostración (simulador local con el mismo contrato que la API): 13 bloqueos ejecutados y verificados y 1 liberación(es) en un clic. Es una SIMULACIÓN: la contención real espera la clave. Filas `simulacion = TRUE`, ignoradas por las vistas y los ejecutores reales.
 - **BD:** migraciones 001-016 aplicadas en Azure. 214 correos, 193 alertas únicas, 14 duplicadas, 7 malformados, 11 sospechosos.
 - **Cadena de ransomware:** 11 cuentas *moreno en 6 sedes, todas en fase de impacto. Siguiente estimada hacia las 04:11.
 
 ## Cola de bloqueos (`acciones_bloqueo`)
 | Estado | Origen | Objetivos |
 |---|---|---|
+| EJECUTADA | AUTOMATICO | qgomez@sampol.com, jmoreno@sampol.com, amoreno@sampol.com, bmoreno@sampol.com, dmoreno@sampol.com, hmoreno@sampol.com, imoreno@sampol.com, vmoreno@sampol.com, lmoreno@sampol.com |
+| EJECUTADA | MANUAL | cmoreno@sampol.com, emoreno@sampol.com, fmoreno@sampol.com, gmoreno@sampol.com, fmoreno@sampol.com |
 | OMITIDA | AUTOMATICO | slopez@sampol.com |
 | PENDIENTE | AUTOMATICO | qgomez@sampol.com, jmoreno@sampol.com, amoreno@sampol.com, bmoreno@sampol.com, dmoreno@sampol.com, hmoreno@sampol.com, imoreno@sampol.com, vmoreno@sampol.com, lmoreno@sampol.com |
 | PENDIENTE | MANUAL | cmoreno@sampol.com, emoreno@sampol.com, fmoreno@sampol.com, gmoreno@sampol.com |

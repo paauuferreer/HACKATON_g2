@@ -187,6 +187,7 @@ const pend = D.acciones.filter(a => a.estado === 'PENDIENTE').length;
 $('gen').textContent = D.generado;
 $('lead').textContent = `Una intrusión ha saltado de cuenta en cuenta: ${nv} cuentas *moreno en ${nv} equipos de ${D.n_sedes} sedes, todas en fase de impacto. El director confirma ransomware con doble extorsión, 18 GB enviados fuera, copias debilitadas y un pago manipulado. Aquí está lo que puede costar, quién está comprometido y qué hemos hecho.`;
 $('banner').innerHTML = `<b>${pend} bloqueos en cola y 0 ejecutados.</b> La API de bloqueo rechaza la clave del equipo (401) desde la noche del 03/11, tras un intento de reenviar la ficha de credenciales a una cuenta externa (12:30). Las decisiones están tomadas y justificadas en la base de datos; falta la clave nueva para ejecutarlas.`;
+if (D.demo) { const pd = document.createElement('p'); pd.className = 'muted'; pd.style.fontSize = '13px'; pd.textContent = D.demo; document.querySelector('.banner').after(pd); }
 $('k1').textContent = D.kpis.correos_recibidos;
 $('k2').textContent = nv;
 $('k2l').textContent = `cuentas comprometidas en ${D.n_sedes} sedes (cadena *moreno)`;

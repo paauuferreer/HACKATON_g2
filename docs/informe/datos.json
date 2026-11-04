@@ -1,5 +1,5 @@
 {
- "generado": "04/11/2026 05:16",
+ "generado": "04/11/2026 05:58",
  "kpis": {
   "correos_recibidos": 214,
   "alertas_total": 207,
@@ -13,7 +13,7 @@
   "sospechosos": 11,
   "malformados": 7,
   "malformados_pendientes": 7,
-  "bloqueos_ok": 0
+  "bloqueos_ok": 13
  },
  "por_gravedad": [
   {
@@ -1886,6 +1886,118 @@
    "regla": "AUTO-06",
    "estado": "PENDIENTE",
    "solicitada": "04/11 04:54"
+  },
+  {
+   "usuario_objetivo": "qgomez@sampol.com",
+   "ip": null,
+   "origen": "AUTOMATICO",
+   "regla": "AUTO-05",
+   "estado": "EJECUTADA",
+   "solicitada": "04/11 05:58"
+  },
+  {
+   "usuario_objetivo": "jmoreno@sampol.com",
+   "ip": null,
+   "origen": "AUTOMATICO",
+   "regla": "AUTO-05",
+   "estado": "EJECUTADA",
+   "solicitada": "04/11 05:58"
+  },
+  {
+   "usuario_objetivo": "amoreno@sampol.com",
+   "ip": null,
+   "origen": "AUTOMATICO",
+   "regla": "AUTO-05",
+   "estado": "EJECUTADA",
+   "solicitada": "04/11 05:58"
+  },
+  {
+   "usuario_objetivo": "bmoreno@sampol.com",
+   "ip": null,
+   "origen": "AUTOMATICO",
+   "regla": "AUTO-05",
+   "estado": "EJECUTADA",
+   "solicitada": "04/11 05:58"
+  },
+  {
+   "usuario_objetivo": "dmoreno@sampol.com",
+   "ip": null,
+   "origen": "AUTOMATICO",
+   "regla": "AUTO-05",
+   "estado": "EJECUTADA",
+   "solicitada": "04/11 05:58"
+  },
+  {
+   "usuario_objetivo": "cmoreno@sampol.com",
+   "ip": null,
+   "origen": "MANUAL",
+   "regla": "MANUAL:D-007",
+   "estado": "EJECUTADA",
+   "solicitada": "04/11 05:58"
+  },
+  {
+   "usuario_objetivo": "emoreno@sampol.com",
+   "ip": null,
+   "origen": "MANUAL",
+   "regla": "MANUAL:D-007",
+   "estado": "EJECUTADA",
+   "solicitada": "04/11 05:58"
+  },
+  {
+   "usuario_objetivo": "fmoreno@sampol.com",
+   "ip": null,
+   "origen": "MANUAL",
+   "regla": "MANUAL:D-007",
+   "estado": "EJECUTADA",
+   "solicitada": "04/11 05:58"
+  },
+  {
+   "usuario_objetivo": "gmoreno@sampol.com",
+   "ip": null,
+   "origen": "MANUAL",
+   "regla": "MANUAL:D-007",
+   "estado": "EJECUTADA",
+   "solicitada": "04/11 05:58"
+  },
+  {
+   "usuario_objetivo": "hmoreno@sampol.com",
+   "ip": null,
+   "origen": "AUTOMATICO",
+   "regla": "AUTO-05",
+   "estado": "EJECUTADA",
+   "solicitada": "04/11 05:58"
+  },
+  {
+   "usuario_objetivo": "imoreno@sampol.com",
+   "ip": null,
+   "origen": "AUTOMATICO",
+   "regla": "AUTO-06",
+   "estado": "EJECUTADA",
+   "solicitada": "04/11 05:58"
+  },
+  {
+   "usuario_objetivo": "vmoreno@sampol.com",
+   "ip": null,
+   "origen": "AUTOMATICO",
+   "regla": "AUTO-05",
+   "estado": "EJECUTADA",
+   "solicitada": "04/11 05:58"
+  },
+  {
+   "usuario_objetivo": "lmoreno@sampol.com",
+   "ip": null,
+   "origen": "AUTOMATICO",
+   "regla": "AUTO-06",
+   "estado": "EJECUTADA",
+   "solicitada": "04/11 05:58"
+  },
+  {
+   "usuario_objetivo": "fmoreno@sampol.com",
+   "ip": null,
+   "origen": "MANUAL",
+   "regla": "MANUAL",
+   "estado": "EJECUTADA",
+   "solicitada": "04/11 05:58"
   }
  ],
  "outlook": [
@@ -2133,8 +2245,20 @@
  "ingesta": {
   "ultima_insercion": "2026-11-04T04:54:15.366893",
   "ultimo_correo": "2026-11-04T04:52:36",
-  "min_sin_ingesta": 22.0
+  "min_sin_ingesta": 65.0
  },
+ "demo": [
+  {
+   "accion": "LIBERAR",
+   "estado": "EJECUTADA",
+   "total": 1
+  },
+  {
+   "accion": "BLOQUEAR",
+   "estado": "EJECUTADA",
+   "total": 13
+  }
+ ],
  "migraciones": [
   {
    "version": "001_esquema_alertas.sql",

@@ -1,6 +1,6 @@
 # Informe final · Equipo 2 · Reto SOC Sampol (Hackathon FP 2027)
 
-*Generado el 04/11/2026 05:16 (hora de Madrid) a partir de la base de datos del equipo, el buzón del reto y el análisis económico. Origen de cada cifra: **[D]** dato del director · **[BD]** base de datos · **[H]** hipótesis del equipo.*
+*Generado el 04/11/2026 05:58 (hora de Madrid) a partir de la base de datos del equipo, el buzón del reto y el análisis económico. Origen de cada cifra: **[D]** dato del director · **[BD]** base de datos · **[H]** hipótesis del equipo.*
 
 ## 1. Resumen ejecutivo
 - **Qué ha pasado.** Una intrusión ha saltado de cuenta en cuenta: **11 cuentas `*moreno`** en **11 equipos de 6 sedes** (Barcelona, Bilbao, Madrid, Palma, Sevilla, Valencia), una nueva cada ~74 min. Todas llegan a la fase de impacto: ficheros alterados o perdidos. En paralelo, el director informa de un ransomware con **doble extorsión**, **18 GB enviados a una IP externa**, copias de seguridad debilitadas y un **documento de pagos manipulado**.
@@ -131,6 +131,7 @@ Incluso con el ruido real, que es menor, la solución propia se recupera en sema
 - **Bloqueo automático (BD):** AUTO-05 (crítico verificado) y AUTO-06 (correlación). Decisiones: AUTO-05 BLOQUEAR USUARIO=7, AUTO-05 RECOMENDAR IP=15, AUTO-05 RECOMENDAR USUARIO=5, AUTO-05 YA_BLOQUEADO USUARIO=17, AUTO-06 BLOQUEAR USUARIO=2, AUTO-06 DESCARTAR USUARIO=6, AUTO-06 YA_BLOQUEADO USUARIO=6.
 - **Cola de bloqueos:** 13 pendientes, 1 omitida (falso positivo corregido) y 0 ejecutados (API en 401).
 - **Autenticidad del remitente:** SPF pass de protection.outlook.com, AuthAs Internal y SHA-256 del original. Las directrices solo valen de dirti@.
+- **Demostración (simulador local con el mismo contrato que la API): 13 bloqueos ejecutados y verificados y 1 liberación(es) en un clic. Es una SIMULACIÓN: la contención real espera la clave.** Comandos: `demo/bloqueador_simulado.py` y `demo/demo_bloqueos.py`; las filas llevan `simulacion = TRUE` y no afectan a la cola real.
 - **Buzón:** 10 carpetas y un flujo de Power Automate que ordena cada correo nuevo 5 min después de que lo capture la ingesta.
 - **Directrices de crisis:** respondidas la mayoría; «Solicitud externa no verificada» solo con acuse y «Criterios de reapertura» y «Análisis de la causa inicial» sin responder (ver anexo A).
 

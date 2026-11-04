@@ -86,7 +86,11 @@ franjas = d["por_franja"]
 total_alertas = sum(f["total"] for f in franjas) or 1
 noche = next((f for f in franjas if f["franja"] == "GUARDIA_NOCHE"), {"total": 0, "criticas": 0})
 
-web = {"generado": d["generado"], "kpis": d["kpis"], "ruido": d["ruido_real"], "coste": coste,
+demo_bloq = sum(x["total"] for x in d.get("demo", []) if x["accion"] == "BLOQUEAR" and x["estado"] == "EJECUTADA")
+demo_lib = sum(x["total"] for x in d.get("demo", []) if x["accion"] == "LIBERAR" and x["estado"] == "EJECUTADA")
+DEMO_TXT = (f"Demostración (simulador local con el mismo contrato que la API): {demo_bloq} bloqueos ejecutados y verificados "
+            f"y {demo_lib} liberación(es) en un clic. Es una SIMULACIÓN: la contención real espera la clave.") if demo_bloq else ""
+web = {"generado": d["generado"], "demo": DEMO_TXT, "kpis": d["kpis"], "ruido": d["ruido_real"], "coste": coste,
        "soc": {"alertas_mes": ALERTAS_MES, "min_alerta": MIN_ALERTA, "coste_hora": H_ANALISTA,
                "coste_mes": coste_soc_mes, "pct_noche": noche["total"] / total_alertas},
        "roi_real": roi_real, "victimas": victimas, "fases": d["cadena_fases"], "ips": d["ips_reconstruidas"],
@@ -238,6 +242,8 @@ w(f"- **Bloqueo automático (BD):** AUTO-05 (crítico verificado) y AUTO-06 (cor
 w(f"- **Cola de bloqueos:** {sum(1 for a in acc if a['estado']=='PENDIENTE')} pendientes, "
   f"{sum(1 for a in acc if a['estado']=='OMITIDA')} omitida (falso positivo corregido) y 0 ejecutados (API en 401).")
 w("- **Autenticidad del remitente:** SPF pass de protection.outlook.com, AuthAs Internal y SHA-256 del original. Las directrices solo valen de dirti@.")
+if DEMO_TXT:
+    w(f"- **{DEMO_TXT}** Comandos: `demo/bloqueador_simulado.py` y `demo/demo_bloqueos.py`; las filas llevan `simulacion = TRUE` y no afectan a la cola real.")
 w("- **Buzón:** 10 carpetas y un flujo de Power Automate que ordena cada correo nuevo 5 min después de que lo capture la ingesta.")
 w("- **Directrices de crisis:** respondidas la mayoría; «Solicitud externa no verificada» solo con acuse y «Criterios de reapertura» y «Análisis de la causa inicial» sin responder (ver anexo A).")
 
@@ -302,6 +308,8 @@ e(f"- **API de bloqueo:** GET `/equipo-2/bloqueos` → **{api.get('http')}** ({a
 e(f"- **Ingesta:** último correo guardado a las {str(ing.get('ultima_insercion', ''))[11:16]} "
   f"({int(ing.get('min_sin_ingesta') or 0)} min sin correos nuevos en la BD). "
   "El cron de `postgres-sync` no se ejecuta solo: lanzar *Run workflow* si hace falta.")
+if DEMO_TXT:
+    e(f"- **Demo:** {DEMO_TXT} Filas `simulacion = TRUE`, ignoradas por las vistas y los ejecutores reales.")
 e(f"- **BD:** migraciones 001-{max(m['version'][:3] for m in d['migraciones'])} aplicadas en Azure. "
   f"{k['correos_recibidos']} correos, {k['alertas_unicas']} alertas únicas, {k['duplicadas']} duplicadas, "
   f"{k['malformados']} malformados, {k['sospechosos']} sospechosos.")
