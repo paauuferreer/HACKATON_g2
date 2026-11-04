@@ -83,17 +83,27 @@ export function targetMatches(record,user){return record?.equipo_id===2&&record?
 // SQL owns classification and corroboration thresholds; the executor independently
 // checks the original, target, protected assets and commands before any mutation.
 function assessSqlUser(action,alert,evidence,rule,settings,now){
- if(action.accion!=='BLOQUEAR'||action.origen!=='AUTOMATICO'||action.simulacion===true)return fail('SOLO_BLOQUEO_AUTOMATICO');
+ const manual=action.origen==='MANUAL'&&action.regla==='MANUAL:D-007';
+ const chain=action.origen==='AUTOMATICO'&&action.regla==='AUTO-06';
+ if(action.accion!=='BLOQUEAR'||(!manual&&action.origen!=='AUTOMATICO')||action.simulacion===true)return fail('SOLO_BLOQUEO_AUTOMATICO');
  if(action.ip||action.ip_objetivo||!action.usuario_objetivo)return fail('IP_O_SERVIDOR_PROTEGIDO');
  const user=String(action.usuario_objetivo).trim().toLowerCase();
  if(!/^[a-z][a-z0-9._-]{1,63}@[a-z0-9.-]+$/.test(user)||user.split('@')[1]!==settings.userDomain)return fail('USUARIO_NO_IDENTIFICADO');
  if(/admin|root|system|service|servicio|svc|robot|bot|backup|sql|sync|monitor|breakglass|emergency|noreply|no-reply|support|soporte/i.test(user.split('@')[0]))return fail('CUENTA_PROTEGIDA');
  if(!alert||alert.alerta_id!==action.alerta_id||String(alert.usuario_implicado||'').trim().toLowerCase()!==user)return fail('OBJETIVO_NO_COINCIDE');
+ if(manual){
+  if(rule?.manualDecisionApproved!==true||rule.regla_id!==action.regla)return fail('DECISION_MANUAL_NO_VIGENTE');
+ }else if(chain){
+  if(!rule?.sqlDecisionApproved||rule.activa!==true||rule.regla_id!=='AUTO-06'||rule.objetivo!=='USUARIO'||rule.phaseMatches!==true)return fail('DECISION_SQL_NO_VIGENTE');
+ }else{
  if(!rule?.sqlDecisionApproved||!rule.activa||rule.regla_id!==action.regla||!['USUARIO','AMBOS'].includes(rule.objetivo)||!rule.prioridades?.includes(alert.soc_prioridad)||!rule.peligrosidades?.includes(alert.soc_peligrosidad)||(rule.clases_incibe&&!rule.clases_incibe.includes(alert.incibe_clase_id)))return fail('DECISION_SQL_NO_VIGENTE');
  if(alert.es_duplicada||alert.es_sospechosa!==false||alert.remitente_confianza!==true||!['NUEVA','EN_REVISION','CONFIRMADA'].includes(alert.estado)||alert.soc_peligrosidad!=='CRITICO'||!['INTRUSION','CONTENIDO_DANINO','COMPROMISO_INFORMACION'].includes(alert.incibe_clase_id))return fail('ALERTA_NO_FIABLE');
  const criticality=folded(alert.criticidad_cuerpo).trim();
  if(!/^(critic|alt|medi|baj)/.test(criticality)||![...(rule.criticidades_cuerpo||[]),...(rule.criticidades_corroboradas||[])].some(x=>criticality.startsWith(x)))return fail('CRITICIDAD_CUERPO_NO_CONFIRMADA');
  if(!Array.isArray(alert.inconsistencias)||alert.inconsistencias.some(i=>!/^Prioridad P[1-4] incoherente con gravedad CR[IÍ]TICO$|^Gravedad del asunto CRITICO distinta de la criticidad del cuerpo |^Dirección relacionada con formato no válido/i.test(String(i))))return fail('ALERTA_NO_FIABLE');
+
+ }
+ if(alert.es_duplicada||alert.es_sospechosa!==false||alert.remitente_confianza!==true||!['NUEVA','EN_REVISION','CONFIRMADA'].includes(alert.estado))return fail('ALERTA_NO_FIABLE');
  if(!evidence?.eml_raw||evidence.correo_id!==alert.correo_id||evidence.integridad_ok!==true||evidence.autenticacion_verificada!==true||!evidence.autenticacion_metodo||!evidence.autenticacion_emisor)return fail('REMITENTE_SIN_AUTENTICACION_VERIFICADA');
  const sender=String(alert.remitente_correo||'').trim().toLowerCase();
  if(!settings.trustedSenders.includes(sender)||String(evidence.remitente_correo||'').trim().toLowerCase()!==sender||evidence.originalSubject!==alert.asunto_correo)return fail('REMITENTE_NO_AUTORIZADO');
