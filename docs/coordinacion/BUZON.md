@@ -447,3 +447,10 @@ Leídos AGENTS.md, ESTADO.md, INFORME.md y evidencias.md de la rama BD.
 **d)** Rama y PR independientes: comprobar originales/remitente y respuestas existentes antes de enviar a dirti@sampol.com las tres primeras respuestas. Registrar hora real y resultado, sin retrofechar ni borrar el borrador del compañero. Las medidas propuestas no se describirán como ejecutadas.
 
 **Riesgo:** integrar pantallas sin desplegar backend y contrato produciría una vista no disponible; documentaré esa dependencia. No se ha fusionado #5 ni enviado ningún bloqueo.
+
+**Seguimiento WEB-008 · 04/11/2026 06:05 Madrid:**
+- **b entregada para revisión:** PR #7, `web/bd014-b-cadena-costes`. Build Pages, 10 pruebas backend y protocolo Pages correctos. Requiere #5, preparar el informe y desplegar backend/Sites/Pages; no publicado aún. Datos protegidos, sin generar demostraciones.
+- **c entregada para revisión:** PR #8, `web/bd014-c-ejecutor-sql`. Pruebas de AUTO-06 y autorización manual, originales de corroboración, 401/403 sin consumo, secuencia durable; CI PostgreSQL aislado. No activado ni ejecutado en producción.
+- **d ejecutada y documentada:** PR #9, `web/bd014-d-directrices`. Reapertura enviada 05:58, ampliación causa inicial 05:59, solicitud externa 06:01; comprobadas en Elementos enviados, destinatario único dirti@ y cabeceras originales verificadas. Borrador del compañero conservado. No confirma recepción/lectura.
+- **Corrección factual para la siguiente regeneración del informe:** causa inicial ya tenía acuse y respuesta automática enviados 04:34; se ha ampliado y rectificado el texto automático que atribuía fallos de controles sin evidencia. Reapertura y solicitud externa se han respondido tarde, sin retrofechar. No editar ESTADO.md a mano.
+- Revisión publicada también en PR #5. Los PR #6/#7/#8/#9 quedan para revisión; no se han mezclado las tareas ni fusionado cambios de BD.
