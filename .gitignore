@@ -60,3 +60,5 @@ token_cache*.json
 services/**/node_modules/
 **/.vercel/
 !services/postgres-api/.env.example
+
+/services/postgres-api/report/

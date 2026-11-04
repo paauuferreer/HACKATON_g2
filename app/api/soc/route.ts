@@ -1,7 +1,7 @@
 import {guard,external,json,failure,runtimeEnv,HttpError} from '@/lib/cloudflare-backend';
 import {readSoc,writeSoc,canApprove} from '@/lib/soc-service';
 export const dynamic='force-dynamic';
-export async function GET(request:Request){try{const user=await guard(request);return await external(request,'/soc'+new URL(request.url).search,user.email)||await readSoc(request,user.email);}catch(e){return failure(e);}}
+export async function GET(request:Request){try{const user=await guard(request);const view=new URL(request.url).searchParams.get('view');if(view==='chain'||view==='costs'){const response=await external(request,'/soc'+new URL(request.url).search,user.email,true);if(!response)throw new HttpError(503,'Backend de investigación pendiente de configurar.');return response;}return await external(request,'/soc'+new URL(request.url).search,user.email)||await readSoc(request,user.email);}catch(e){return failure(e);}}
 export async function POST(request:Request){try{
  const user=await guard(request,true);
  // Connection setup remains in Sites, never forwarded to the PostgreSQL service.
