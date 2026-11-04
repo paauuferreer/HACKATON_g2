@@ -154,6 +154,7 @@ CONSULTAS = {
                          max(fecha_hora_correo) AT TIME ZONE 'Europe/Madrid' AS ultimo_correo,
                          round(extract(epoch FROM now() - max(fecha_recepcion_bd)) / 60) AS min_sin_ingesta
                   FROM bandeja_entrada""",
+    "demo": "SELECT accion, estado, count(*) AS total FROM acciones_bloqueo WHERE simulacion GROUP BY 1, 2",
     "migraciones": "SELECT version, to_char(applied_at AT TIME ZONE 'Europe/Madrid', 'DD/MM HH24:MI') AS aplicada FROM schema_migrations ORDER BY version",
 }
 PATRON_OTROS = ("persistencia dirigida|cambio de cuenta de pago|llamada intenta|cuenta administrativa|"
